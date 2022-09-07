@@ -1,0 +1,407 @@
+---
+title: "Introduction to Excess Hazard Modelling Considering Inappropriate Mortality Rates"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(xhaz)
+```
+
+
+# Introduction
+
+xhaz is an R package to fit excess hazard models, with or without proportional population hazards assumption.
+The baseline excess hazard could be a piecewise constant function or a B-splines. 
+When B-splines is choosen for the baseline excess hazard, the user can specify some covariates which have
+a time-dependent effect (using "bsplines") on the baseline excess hazard. 
+The user can also specify if the framework corresponds to the classical excess hazard modeling, 
+i.e. assuming that the expected mortality of studied individuals is appropriate.
+He can also consider two other framework: first, the expected mortality available in the life table is
+not accurate and requires taking into account an additional variable in the life table with a proportional [Touraine et al. (2020)](https://pubmed.ncbi.nlm.nih.gov/30674229/) or non-proportional [(Mba et al. (2020)](https://pubmed.ncbi.nlm.nih.gov/33121436/) effect; 
+second, there is a non-comparability source of bias in terms of expected mortality of selected individuals in a clinical trials [Goungounga et al. (2019)](https://pubmed.ncbi.nlm.nih.gov/31096911/).
+
+
+
+(*Here's the abstract from Touraine et al. paper:*  Relative survival methods used to estimate the excess mortality of cancer patients rely on the background (or expected) mortality derived from general population life tables. These methods are based on splitting the observed mortality into the excess mortality and the background mortality. By assuming a regression model for the excess mortality, usually a Cox-type model, one may investigate the effects of certain covariates on the excess mortality. Some covariates are cancer-specific whereas others are variables that may influence the background mortality as well. The latter should be taken into account in the background mortality to avoid biases in estimating their effects on the excess mortality. Unfortunately, the available life table might not include such variables and, consequently, might provide inaccurate values of the background mortality. We propose a model that uses multiplicative parameters to correct potentially inaccurate background mortality. The model can be seen as an extension of the frequently used Esteve model because we assume a Cox-type model for the excess mortality with a piecewise constant baseline function and introduce additional parameters that multiply the background mortality. The original and the extended model are compared, first in a simulation study, then in an application to colon cancer registry data.
+
+A related software package can be found at a gitlab webpage or at https://CRAN.R-project.org/package=xhaz.
+
+## Installation
+
+The most recent version of `xhaz` can be installed directly from the repository using the `devtools` package
+
+```
+devtools::install_gitlab("/biostat_sesstim/xhaz")
+```
+
+`xhaz` depends on the `stats`, `survival`, `optimParallel`, `numDeriv`, `statmod`, `gtools`  and `splines` packages which can be installed directly from CRAN.
+
+It also utilizes `survexp.fr`, the R package containing the French life table. For example, to install `survexp.fr` follow the instructions available at the [RStudio page on R and survexp.fr](https://cran.r-project.org/package=survexp.fr).
+
+First, install the R package via github.
+
+```
+devtools::install_github("rstudio/survexp.fr")
+```
+
+Then, when these other packages are installed, please load the xhaz R package.
+
+```{r}
+library(xhaz)
+```
+
+
+
+
+### Fitting an classical excess hazard model with a piecewise constant baseline hazard 
+
+We illustrate the Esteve model using a simulated dataset from the original Touraine et al. (2020) paper. This dataset is comprised of 2,000 patients with an information regarding their race as this information can impact the patient background mortality. The US life table can be used for the estimation of the model parameters.
+
+
+
+```{r}
+data("simuData", package = "xhaz")
+
+head(simuData)
+dim(simuData)
+
+levels(simuData$sex) <- c("male", "female")
+interval <- c(0, 0.718, 1.351, 2.143, 3.601, 6)
+fit.estv1 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
+                  data = simuData,
+                  ratetable = survexp.us,
+                  interval = interval,
+                  rmap = list(age = 'age', sex = 'sex', year = 'date'),
+                  baseline = c("constant"),
+                  pophaz = "classic")
+                  
+fit.estv1
+```
+
+
+
+### Fitting an excess hazard model with a piecewise constant baseline hazard with background mortality corrected with proportional effect for race variable
+
+The new parameter to be added to xhaz() function is "add.rmap": it allows to specify the additional variable for the life table needed for the estimation of the excess hazard parameters. This model concerns that proposed by Touraine et al (2020).
+
+
+```{r}
+fit.corrected1 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
+                       data = simuData,
+                       ratetable = survexp.us,
+                       interval = interval,
+                       rmap = list(age = 'age', sex = 'sex', year = 'date'),
+                       baseline = "constant", pophaz = "corrected",
+                       add.rmap = "race")
+                       
+fit.corrected1
+```
+
+
+### Fitting an excess hazard model with a piecewise constant baseline hazard with background mortality corrected with non proportional effect for race variable 
+
+The new parameter to be added to xhaz() function is "add.rmap.cut": it furthermore allows to specify that the additional variable have a non proportional effect on the background mortality. This excess hazard model concerns that proposed by Mba et al (2020).
+
+```{r}
+ # An additionnal cavariate (here race) missing in the life table is
+ # considered by the model with a breakpoint at 75 years
+
+ fit.corrected2 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
+                        data = simuData,
+                        ratetable = survexp.us,
+                        interval = interval,
+                        rmap = list(age = 'age', sex = 'sex', year = 'date'),
+                        baseline = "constant", pophaz = "corrected",
+                        add.rmap = "race",
+                        add.rmap.cut = list(breakpoint = TRUE, cut = 75))
+
+
+
+ fit.corrected2
+```
+
+We can compare the output of these two models using AIC or BIC criteria.
+
+
+```{r}
+AIC(fit.estv1)
+AIC(fit.corrected1)
+
+BIC(fit.estv1)
+BIC(fit.corrected1)
+```
+
+A statistical comparison between two nested models can be performed with a likelihood ratio test calculated by function anova method implemented in xhaz. 
+
+As an example, say that we want to test whether we can drop all the complex terms in the Mba model compared to the Touraine model.
+
+As in survival package, We compare the two models using anova(), i.e.,
+
+
+```{r}
+anova(fit.corrected1, fit.corrected2)
+```
+
+
+Note that the user is responsible to supply appropriately nested excess hazard models such that the LRT to be valid.
+The result suggests that we could use the Mba model with non-proportional population hazards, correcting for the life table with additional stratification on the variable "race".
+
+### Plot of net survival and excess hazard for different models
+
+One could be interested to the prediction of net survival and excess hazard of the individual with the same characteristics as individual 1 on the SimuData (age 50.5, race black)
+
+
+```{r, fig.width=10, fig.height=10}
+
+#only add Surv variables (time_year and status) to have them in the new.data. 
+#They are not used for the prediction
+
+simuData[1,]
+
+
+newdata1 <-
+  expand.grid(
+    race = factor("black",
+                   levels = levels(simuData$race)),
+    agec  = simuData[1, "agec"], #i.e age 50.5 years
+    time_year = 0,
+    status = 0
+  )
+
+
+
+predict_mod1 <- predict(object = fit.estv1,
+                        new.data = newdata1,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+
+
+predict_mod2 <- predict(object = fit.corrected1,
+                        new.data = newdata1,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+
+
+
+predict_mod3 <- predict(object = fit.corrected2,
+                        new.data = newdata1,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+old.par <- par(no.readonly = TRUE)
+par(mfrow = c(2, 1))
+
+
+plot(
+  predict_mod1,
+  what = "survival",
+  xlab = "time since diagnosis (year)",
+  ylab = "net survival",
+  ylim = c(0, 1),
+  main = "Estève Model"
+)
+
+par(new = TRUE)
+
+plot(
+  predict_mod2,
+  what = "survival",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 1),
+  lty = 2,
+  lwd = 2# main = "Touraine Model"
+)
+
+par(new = TRUE)
+plot(
+  predict_mod3,
+  what = "survival",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 1),
+  lty = 3,
+  lwd = 3#main = "Mba Model"
+)
+legend(
+  "bottomleft",
+  legend = c("Esteve Model",
+             "Touraine Model",
+             "Mba Model"),
+  lty = c(1, 2 , 3),
+  lwd = c(1, 2 , 3)
+)
+
+
+plot(
+  predict_mod1,
+  what = "hazard",
+  xlab = "time since diagnosis (year)",
+  ylab = "excess hazard",
+  ylim = c(0, 0.30),
+  lty = 1
+)
+
+par(new = TRUE)
+plot(
+  predict_mod2,
+  what = "hazard",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 0.30),
+  lty = 2,
+  lwd = 2
+)
+par(new = TRUE)
+plot(
+  predict_mod3,
+  what = "hazard",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 0.30),
+  lty = 3,
+  lwd = 3
+)
+
+legend(
+  "topright",
+  legend = c("Esteve Model",
+             "Touraine Model",
+             "Mba Model"),
+  lty = c(1, 2 , 3),
+  lwd = c(1, 2 , 3)
+)
+par(old.par)
+
+```
+
+
+One could be interested to the prediction of marginal net survival and marginal excess hazard of the individual with the same characteristics as observed in the simuData.
+
+
+```{r, fig.width=10, fig.height=10}
+
+#only add Surv variables (time_year and status) to have them in the new.data. 
+#They are not used for the prediction
+#we could be interested to the prediction of net survival and excess hazard of the individual we the same characteristics that this one (age 50.5, race black)
+
+predmar_mod1 <- predict(object = fit.estv1,
+                        new.data = simuData,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+
+
+predmar_mod2 <- predict(object = fit.corrected1,
+                        new.data = simuData,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+
+
+
+predmar_mod3 <- predict(object = fit.corrected2,
+                        new.data = simuData,
+                        times.pts = c(seq(0, 6, 0.1)),
+                        baseline = FALSE)
+
+par(mfrow = c(2, 1))
+
+
+plot(
+  predmar_mod1,
+  what = "survival",
+  xlab = "time since diagnosis (year)",
+  ylab = "net survival",
+  ylim = c(0, 1),
+  main = "Estève Model"
+)
+
+par(new = TRUE)
+plot(
+  predmar_mod2,
+  what = "survival",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 1),
+  lty = 2,
+  lwd = 2# main = "Touraine Model"
+)
+
+par(new = TRUE)
+plot(
+  predmar_mod3,
+  what = "survival",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 1),
+  lty = 3,
+  lwd = 3#main = "Mba Model"
+)
+legend(
+  "bottomleft",
+  legend = c("Esteve Model",
+             "Touraine Model",
+             "Mba Model"),
+  lty = c(1, 2 , 3),
+  lwd = c(1, 2 , 3)
+)
+
+
+plot(
+  predmar_mod1,
+  what = "hazard",
+  xlab = "time since diagnosis (year)",
+  ylab = "excess hazard",
+  ylim = c(0, 0.30),
+  lty = 1
+)
+
+par(new = TRUE)
+plot(
+  predmar_mod2,
+  what = "hazard",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 0.30),
+  lty = 2,
+  lwd = 2
+)
+par(new = TRUE)
+plot(
+  predmar_mod3,
+  what = "hazard",
+  xlab = "",
+  ylab = "",
+  ylim = c(0, 0.30),
+  lty = 3,
+  lwd = 3
+)
+
+legend(
+  "topright",
+  legend = c("Esteve Model",
+             "Touraine Model",
+             "Mba Model"),
+  lty = c(1, 2 , 3),
+  lwd = c(1, 2 , 3)
+)
+par(old.par)
+```
+
+
+## License
+
+GPL 3.0, for academic use.
+
+## Acknowledgments
+
+We are grateful to the members of the CENSUR Survival Group for their helpful comments.
