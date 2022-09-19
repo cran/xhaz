@@ -33,8 +33,8 @@ in these presented models uses the maximum likelihood method through the routine
 \tabular{ll}{
 Package: \tab xhaz\cr
 Type: \tab Package\cr
-Version: \tab 2.0.0\cr
-Date: \tab 2022-07-25\cr
+Version: \tab 2.0.1\cr
+Date: \tab 2022-09-12\cr
 License: \tab GPL-3\cr
 }
 }

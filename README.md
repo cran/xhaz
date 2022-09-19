@@ -7,7 +7,7 @@ piecewise constant function or a B-splines. When B-splines is choosen
 for the baseline excess hazard, the user can specify some covariates
 which have a time-dependent effect (using “bsplines”) on the baseline
 excess hazard. The user can also specify if the framework corresponds to
-the classical excess hazard modeling, i.e. assuming that the expected
+the classical excess hazard modeling, i.e. assuming that the expected
 mortality of studied individuals is appropriate. He can also consider
 two other framework: first, the expected mortality available in the life
 table is not accurate and requires taking into account an additional
@@ -46,10 +46,10 @@ A related software package can be found at a gitlab webpage or at
 
 ## Installation
 
-The most recent version of `xhaz` can be installed directly from the
-repository using the `devtools` package
+The most recent version of `xhaz` can be installed directly from the cran
+repository using 
 
-    devtools::install_gitlab("/biostat_sesstim/xhaz")
+    install.packages("xhaz")
 
 `xhaz` depends on the `stats`, `survival`, `optimParallel`, `optimx`,
 `numDeriv`, `statmod`, `gtools` and `splines` packages which can be

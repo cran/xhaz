@@ -4,7 +4,7 @@ citHeader("To cite `xhaz` in publications use:")
 
 citEntry(
   entry    = "Manual",
-  title    = "xhaz: Excess Hazard Modelling Taking into Account Inappropriate Expected Mortality Rates",
+  title    = "xhaz: Excess Hazard Modelling Considering Inappropriate Mortality Rates",
        doi = "10.5281/zenodo.7010710",
   author   = personList(as.person("Juste Goungounga"),
                         as.person("Darlin Mba"),
@@ -12,8 +12,8 @@ citEntry(
                         as.person("Roch Giorgi")),
      year = year,
       note = vers,
-       textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo,  Roch Giorgi, (", year, ").",
-  "xhaz:  Excess Hazard Modelling Taking into Account Inappropriate Expected Mortality Rates.",
+       textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo, Roch Giorgi, (", year, ").",
+  "xhaz:  Excess Hazard Modelling Considering Inappropriate Mortality Rates.",
   note, ". Zenodo",
   ". DOI: 10.5281/zenodo.7010710. https://CRAN.R-project.org/package=xhaz")
 )
@@ -21,7 +21,7 @@ citEntry(
 
 
 bibentry(bibtype = "Manual",
-         title = "{xhaz}: Excess Hazard Modelling Taking into Account Inappropriate Expected Mortality Rates",
+         title = "{xhaz}: Excess Hazard Modelling Considering Inappropriate Mortality Rates",
          author = c(as.person("Juste Goungounga"),
                         as.person("Darlin Mba"),
                         as.person("Nathalie Graffeo"),
@@ -32,7 +32,7 @@ bibentry(bibtype = "Manual",
           doi = "10.5281/zenodo.7010710",
 	        url = "https://CRAN.R-project.org/package=xhaz")
 
-textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo,  Roch Giorgi, (", year, ").",
-  "xhaz:  Excess Hazard Modelling Taking into Account Inappropriate Expected Mortality Rates.",
+textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo, Roch Giorgi, (", year, ").",
+  "xhaz:  Excess Hazard Modelling Considering Inappropriate Mortality Rates.",
   note, ". Zenodo",
   ". DOI: 10.5281/zenodo.7010710. https://CRAN.R-project.org/package=xhaz")

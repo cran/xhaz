@@ -39,10 +39,10 @@ A related software package can be found at a gitlab webpage or at https://CRAN.R
 
 ## Installation
 
-The most recent version of `xhaz` can be installed directly from the repository using the `devtools` package
+The most recent version of `xhaz` can be installed directly from the cran repository using
 
 ```
-devtools::install_gitlab("/biostat_sesstim/xhaz")
+install.packages("xhaz")
 ```
 
 `xhaz` depends on the `stats`, `survival`, `optimParallel`, `numDeriv`, `statmod`, `gtools`  and `splines` packages which can be installed directly from CRAN.
