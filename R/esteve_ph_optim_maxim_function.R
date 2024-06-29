@@ -17,7 +17,7 @@ esteve.ph.optim.maxim <- function(x, y,
                                   add.rmap.cut,
                                   ageDiag,
                                   trace = 0,
-                                  speedy = FALSE)
+                                  speedy = FALSE, method)
 {
   ageDC <- ageDiag + y[, 1]
   if (add.rmap.cut$breakpoint == FALSE) {
@@ -31,7 +31,7 @@ esteve.ph.optim.maxim <- function(x, y,
     if (!is.null(add.rmap)) {
       nalpha <- nlevels(add.rmap)
     } else{
-      nalpha = 0
+      nalpha <- 0
     }
 
     f <- function(theta0) {
@@ -171,7 +171,7 @@ esteve.ph.optim.maxim <- function(x, y,
       theta0[1:(nvar + k * nstrata)] <- optim(par = theta0[1:(nvar + k * nstrata)],
                                               fn = f,
                                               gr = gradient,
-                                              method = "L-BFGS-B",
+                                              method = method,
                                               control = list(REPORT = 1,
                                                              maxit = 500,
                                                              fnscale = -1,
@@ -182,6 +182,7 @@ esteve.ph.optim.maxim <- function(x, y,
         nalpha <- nlevels(add.rmap)
       }
     }
+
 
 
     if(speedy) {
@@ -197,7 +198,7 @@ esteve.ph.optim.maxim <- function(x, y,
         fn = f,
         gr = gradient,
         hessian = TRUE,
-        method = "L-BFGS-B",
+        method = method,
         control = list(REPORT = 1,
                        maxit = 1000,
                        fnscale = -1,
@@ -212,7 +213,7 @@ esteve.ph.optim.maxim <- function(x, y,
       res <- optim(par = theta0,
                    fn = f,
                    gr = gradient,
-                   method = "L-BFGS-B",
+                   method = method,
                    hessian = TRUE,
                    control = list(REPORT = 1,
                                   maxit = 1000,
@@ -436,7 +437,7 @@ colnames(Madd.rmap) <- c(colnames_Madd.rmap)
     # theta0 [1:(nvar + k * nstrata)] <- optim(par = theta0[1:(nvar + k * nstrata)],
     #                                         fn = f,
     #                                         gr = gradient,
-    #                                         method = "L-BFGS-B",
+    #                                         method = method,
     #                                         control = list(REPORT = 1,
     #                                                        maxit = 500,
     #                                                        fnscale = -1,
@@ -446,7 +447,7 @@ colnames(Madd.rmap) <- c(colnames_Madd.rmap)
       par = theta0,
       fn = f,
       gr = gradient,
-      method = "L-BFGS-B",
+      method = method,
       control = list(
         REPORT = 1,
         maxit = 500,
@@ -476,7 +477,7 @@ colnames(Madd.rmap) <- c(colnames_Madd.rmap)
     fn = f,
     gr = gradient,
     hessian = TRUE,
-    method = "L-BFGS-B",
+    method = method,
     control = list(REPORT = 1,
                    maxit = 1000,
                    fnscale = -1,
@@ -491,7 +492,7 @@ colnames(Madd.rmap) <- c(colnames_Madd.rmap)
   res <- optim(par = theta0,
                fn = f,
                gr = gradient,
-               method = "L-BFGS-B",
+               method = method,
                hessian = TRUE,
                control = list(REPORT = 1,
                               maxit = 1000,

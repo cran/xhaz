@@ -11,15 +11,15 @@ testM <- function(X,
                   add.rmap, add.rmap.cut, ageDiag, ageDC,
                   optim, trace, speedy, data) {
 
-  if (min(add.rmap.cut$cut) < min(c(data$age, data$age + data$time))) {
-    if (max(add.rmap.cut$cut) <= max(c(data$age, data$age + data$time))) {
+  if (min(add.rmap.cut$cut) < min(c(ageDiag, ageDiag + data$time))) {
+    if (max(add.rmap.cut$cut) <= max(c(ageDiag, ageDiag + data$time))) {
       stop("Breakpoint(s) is (are) smaller than the minimum age")
     } else
       stop(
         "Breakpoint(s) is (are) smaller than the minimum age and breakpoint(s) greater than the maximum age"
       )
   } else{
-    if (max(add.rmap.cut$cut) > max(c(data$age, data$age + data$time)))
+    if (max(add.rmap.cut$cut) > max(c(ageDiag, ageDiag + data$time)))
       stop("Breakpoint(s) is (are) greater than the maximum age")
   }
   fitter <- get("esteve.ph.fit")

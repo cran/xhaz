@@ -1,38 +1,22 @@
 citHeader("To cite `xhaz` in publications use:")
- year <- "2022"
- vers <- note <- sprintf(" R package version %s", meta$Version)
 
-citEntry(
-  entry    = "Manual",
-  title    = "xhaz: Excess Hazard Modelling Considering Inappropriate Mortality Rates",
-       doi = "10.5281/zenodo.7010710",
-  author   = personList(as.person("Juste Goungounga"),
-                        as.person("Darlin Mba"),
-                        as.person("Nathalie Graffeo"),
-                        as.person("Roch Giorgi")),
-     year = year,
-      note = vers,
-       textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo, Roch Giorgi, (", year, ").",
-  "xhaz:  Excess Hazard Modelling Considering Inappropriate Mortality Rates.",
-  note, ". Zenodo",
-  ". DOI: 10.5281/zenodo.7010710. https://CRAN.R-project.org/package=xhaz")
+year <- "2024"
+vers <- sprintf("R package version %s", meta$Version)
+
+bibentry(
+  bibtype = "Manual",
+  title = "xhaz: Excess Hazard Modelling Considering Inappropriate Mortality Rates",
+  author = c(
+    person(given = "Juste", family = "Goungounga", email = "juste.goungounga@ehesp.fr", role = "aut", comment = c(ORCID = "0000-0002-9039-2639")),
+    person(given = "Hadrien", family = "Charvat", email = "h.charvat.ef@juntendo.ac.jp", role = "aut", comment = c(ORCID = "0000-0003-3624-1394")),
+    person(given = "Darlin", family = "Mba", email = "robertpytha@gmail.com", role = "aut", comment = c(ORCID = "0000-0001-9768-0230")),
+    person(given = "Nathalie", family = "Graffeo", email = "nathalie.graffeo@univ-amu.fr", role = "aut", comment = c(ORCID = "0000-0001-7227-7525")),
+    person(given = "Roch", family = "Giorgi", email = "roch.giorgi@univ-amu.fr", role = "aut", comment = c(ORCID = "0000-0001-6135-3078"))
+  ),
+  year = year,
+  note = vers,
+  doi = "10.5281/zenodo.7010710",
+  url = "https://CRAN.R-project.org/package=xhaz"
 )
 
-
-
-bibentry(bibtype = "Manual",
-         title = "{xhaz}: Excess Hazard Modelling Considering Inappropriate Mortality Rates",
-         author = c(as.person("Juste Goungounga"),
-                        as.person("Darlin Mba"),
-                        as.person("Nathalie Graffeo"),
-                        as.person(" Roch Giorgi")),
-         year = year,
-         note = note,
-    publisher = "Zenodo",
-          doi = "10.5281/zenodo.7010710",
-	        url = "https://CRAN.R-project.org/package=xhaz")
-
-textVersion = paste0("Juste Goungounga, Darlin Mba, Nathalie Graffeo, Roch Giorgi, (", year, ").",
-  "xhaz:  Excess Hazard Modelling Considering Inappropriate Mortality Rates.",
-  note, ". Zenodo",
-  ". DOI: 10.5281/zenodo.7010710. https://CRAN.R-project.org/package=xhaz")
+citFooter("To see these entries in BibTeX format, use 'print(<citation>, bibtex=TRUE)', 'toBibtex(.)', or set 'options(citation.bibtex.max=999)'.")

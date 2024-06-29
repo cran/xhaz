@@ -1,7 +1,7 @@
-#' @title Akaike's An Information Criterion for excess hazard model with
+#' @title Akaike's Information Criterion for excess hazard model with
 #' baseline hazard following a piecewise constant function
 #'
-#' @description Calculates the Akaike's ‘An Information Criterion’ for fitted
+#' @description Calculates the Akaike's 'An Information Criterion' for fitted
 #' models from `xhaz`.
 #'
 #' @param object a fitted model object obtained from `xhaz` function
@@ -23,7 +23,6 @@
 #'#                      linear and proportional effects for the covariates on
 #'#                      baseline excess hazard.
 #'
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' set.seed(1980)
 #' simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
@@ -41,6 +40,7 @@
 #' AIC(fit.estv2)
 #'
 #'
+#' @keywords internal
 #' @export
 AIC.constant <- function(object, ..., k = 2) {
   dots.object <- list(...)

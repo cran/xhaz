@@ -1,0 +1,262 @@
+---
+title: "How to implement a rescaled random-effects excess hazard regression model to handle situations involving inappropriate life tables."
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How to implement a rescaled random-effects excess hazard regression model to handle situations involving inappropriate life tables}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+options(rmarkdown.html_vignette.check_title = FALSE)
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(xhaz)
+```
+
+
+# Introduction
+
+xhaz is an R package for fitting excess hazard regression models, with or without the assumption of proportional hazards. In the presence of hierarchical data, inter-cluster heterogeneity can affect excess hazard estimates. To address this issue, the mexhaz R package implements multilevel excess hazard regression models. If the user wants to check the validity of the non-comparability bias, an easy way is to use the mexhazLT function of the xhaz R package. 
+The user can also specify whether the framework is consistent with classical excess hazard modeling, 
+i.e., assuming that the expected mortality of the individuals studied is appropriate, using the pophaz argument is equivalent to classical.
+The user can also consider a different framework by specifying that pophaz equals rescaled: the expected mortality available in the life table is not accurate, i.e., there is a non-comparability source of bias with respect to the expected mortality of the study population [Goungounga et al. (2023)](https://pubmed.ncbi.nlm.nih.gov/36890623/).
+
+
+
+(*Here's the abstract from Goungounga et al. (2023) paper:* In the presence of competing causes of event occurrence (e.g., death), the interest might not only be in the overall survival but also in the so-called net survival, that is, the hypothetical survival that would be observed if the disease under study were the only possible cause of death. Net survival estimation is commonly based on the excess hazard approach in which the hazard rate of individuals is assumed to be the sum of a disease-specific and expected hazard rate, supposed to be correctly approximated by the mortality rates obtained from general population life tables...
+
+A related software package can be found at a gitlab webpage or at https://CRAN.R-project.org/package=xhaz.
+
+## Installation
+
+The most recent version of `xhaz` can be installed directly from the cran repository using
+
+```
+install.packages("xhaz")
+```
+
+`xhaz` depends on the `stats`, `survival`, `optimParallel`, `numDeriv`, `statmod`, `gtools`  and `splines` packages which can be installed directly from CRAN.
+
+It also utilizes `survexp.fr`, the R package containing the French life table. For example, to install `survexp.fr` follow the instructions available at the [RStudio page on R and survexp.fr](https://cran.r-project.org/package=survexp.fr).
+
+First, install the R package via github.
+
+```
+devtools::install_github("rstudio/survexp.fr")
+```
+
+Then, when these other packages are installed, please load the xhaz R package.
+
+```{r}
+library(xhaz)
+```
+
+
+
+
+### Fitting an classical excess hazard regression model with a cubic B-splines for the baseline hazard as in mexhaz
+
+For this illustration, we used a simulated dataset from the original paper by Goungounga et al. (2023). This dataset consists of 4,978 patients with information on their treatment arm and clinical center ID, as this information may affect the excess mortality rate. The US life table can be used to estimate the model parameters. mexhazLT() function will be used with argument (````pophaz = classic```).
+
+
+
+```{r}
+data("breast", package = "xhaz")
+
+head(breast)
+dim(breast)
+
+# The life table to be used is survexp.us. Note that SEX is coded 2 instead of female in survexp.us.
+
+breast$sexe <- "female"
+fit.haz <- exphaz(
+               formula = Surv(temps, statut) ~ 1,
+               data = breast, ratetable = survexp.us, 
+               only_ehazard = FALSE,
+               rmap = list(age = 'age', sex = 'sexe',
+                           year = 'date'))
+
+
+
+breast$expected <- fit.haz$ehazard
+breast$expectedCum <- fit.haz$ehazardInt
+
+
+qknots <- quantile(breast[breast$statut==1,]$temps, probs=c(1:2/3))
+mod.bs <- mexhazLT(
+  formula = Surv(temps, statut) ~ agecr + armt,
+  data = breast, ratetable = survexp.us, degree = 3,
+  knots = qknots, expected = "expected", 
+  expectedCum = "expectedCum",
+  base = "exp.bs", pophaz = "classic")
+                  
+mod.bs
+```
+
+
+
+### Fitting a rescaled excess hazard regression model with a cubic B-splines for the baseline hazard as in mexhaz
+
+The new parameter to be added to mexhazLT() function is pophaz="rescaled": it allows to rescale the life table available for the estimation of the excess hazard parameters. This model concerns that proposed by Goungounga et al (2016).
+
+
+```{r}
+mod.bs2 <- mexhazLT(
+  formula = Surv(temps, statut) ~ agecr + armt,
+  data = breast, ratetable = survexp.us, degree = 3,
+  knots = qknots, expected = "expected",
+  expectedCum = "expectedCum",
+  base = "exp.bs", pophaz = "rescaled")
+                  
+mod.bs2
+```
+
+
+
+### Fitting a random-effects excess hazard regression model with a cubic B-splines for the baseline hazard as in mexhaz
+
+As in mexhaz, the new parameter to be added to the mexhazLT() function is random="hosp": it allows to specify the variable indicating the cluster levels. However, pophaz is set to be equal to "classic". This excess hazard regression model is the one proposed by Charvat et al (2016). In the output, loglik corresponds to the total log-likelihood including the sum of the cumulative expected hazards, which is often removed in classical excess hazard regression models because it is considered a nuisance parameter. 
+
+```{r}
+
+mod.bs3 <- mexhazLT(
+  formula = Surv(temps, statut) ~ agecr + armt,
+  data = breast, ratetable = survexp.us, degree = 3,
+  knots = qknots, expected = "expected",
+  expectedCum = "expectedCum",
+  base = "exp.bs", pophaz = "classic", random = "hosp")
+                  
+mod.bs3
+```
+
+
+
+### Fitting a rescaled random-effects excess hazard regression model with a cubic B-splines for the baseline hazard as in mexhaz
+
+As in mexhaz, the new parameter to be added to the mexhazLT() function is random="hosp": it allows to specify the variable indicating the cluster levels. However, pophaz is set to be equal to "rescaled" (````pophaz = "rescaled"```). This excess hazard regression model is the one proposed by Goungounga et al (2023). 
+
+```{r}
+
+mod.bs4 <- mexhazLT(
+  formula = Surv(temps, statut) ~ agecr + armt,
+  data = breast, ratetable = survexp.us, degree = 3,
+  knots = qknots, expected = "expected", 
+  expectedCum = "expectedCum",
+  base = "exp.bs", pophaz = "rescaled", random = "hosp")
+                  
+mod.bs4
+```
+
+We can compare the output of these two models using AIC or BIC criteria.
+
+
+```{r}
+compared_models <- list(mod.bs,mod.bs2, mod.bs3, mod.bs4)
+names(compared_models) <- c("mod.bs","mod.bs2", "mod.bs3", "mod.bs4")
+
+sapply(compared_models, function(i) {
+  AIC(i)
+})
+
+```
+
+A statistical comparison between two nested models can be performed with a likelihood ratio test calculated by function anova method implemented in xhaz. 
+
+For example, suppose we want to test whether we can drop the rescaling parameter between the different excess hazard regression models.
+
+As in survival package, we compare the models using anova(), i.e.,
+
+
+```{r}
+anova(mod.bs,mod.bs2)
+anova(mod.bs3,mod.bs4)
+```
+
+
+Note that it is the user's responsibility to provide properly nested hazard models for the LRT to be valid.
+The results suggest that by correcting for between-cluster heterogeneity and non-comparability bias with a rescaled random effects excess hazard regression model, the user will be able to provide more accurate estimates of net survival.
+
+### Plot of net survival and excess hazard for different models
+
+One could be interested in the prediction of net survival and excess hazard for the individual with the same characteristics as individual 1 in the breast dataset (age 30.95, armt equals 0) as performed in mexhaz.
+
+
+```{r, fig.width=10, fig.height=10}
+
+predict_mod <- predict(mod.bs,
+                        time.pts=seq(0.1,10,by=0.1),
+                        data.val=data.frame(agecr = breast[1,]$agecr,
+                                            armt = breast[1,]$armt))
+
+
+predict_mod2 <- predict(mod.bs2,
+                        time.pts=seq(0.1,10,by=0.1),
+                        data.val=data.frame(agecr = breast[1,]$agecr,
+                                            armt = breast[1,]$armt))
+
+predict_mod3 <- predict(mod.bs3,
+                        time.pts=seq(0.1,10,by=0.1),
+                        data.val=data.frame(agecr = breast[1,]$agecr,
+                                            armt = breast[1,]$armt, 
+                                            hosp = breast[1,]$hosp))
+
+predict_mod4 <- predict(mod.bs4,
+                        time.pts=seq(0.1,10,by=0.1),
+                        data.val=data.frame(agecr = breast[1,]$agecr,
+                                            armt = breast[1,]$armt,
+                                            hosp = breast[1,]$hosp))
+
+old.par <- par(no.readonly = TRUE)
+
+par(mfrow = c(1, 2))
+
+plot(predict_mod$results$time.pts, predict_mod$results$hazard,
+     type = "l", lwd = 2, xlab = 'Time (years)',
+     ylab = "excess hazard")
+lines(predict_mod2$results$time.pts, predict_mod2$results$hazard,
+      type = "l", lwd = 2, col = "blue", lty = 2)
+lines(predict_mod3$results$time.pts, predict_mod3$results$hazard, 
+      type = "l", lwd = 2, col = "red")
+lines(predict_mod4$results$time.pts, predict_mod4$results$hazard,
+      type = "l", lwd = 2, col = "green", lty = 2)
+
+
+plot(predict_mod$results$time.pts, predict_mod$results$surv,
+     type = "l", lwd = 2, xlab = 'Time (years)',
+     ylab = "Net survival", ylim = c(0,1))
+lines(predict_mod2$results$time.pts, predict_mod2$results$surv,
+      type = "l", lwd = 2, col = "blue", lty = 2)
+lines(predict_mod3$results$time.pts, predict_mod3$results$surv,
+      type = "l", lwd = 2, col = "red")
+lines(predict_mod4$results$time.pts, predict_mod4$results$surv,
+      type = "l", lwd = 2, col = "green",lty = 2)
+
+legend(
+  "topright",
+  legend = c("mod.bs",
+             "mod.bs2",
+             "mod.bs3",
+             "mod.bs4"),
+  lty = c(1, 2 , 1, 2),
+  lwd = c(2, 2 , 2, 2),
+  col = c("black", "blue", "red", "green")
+)
+par(old.par)
+
+```
+
+
+
+## License
+
+GPL 3.0, for academic use.
+
+## Acknowledgments
+
+We are grateful to the members of the CENSUR Survival Group for their helpful comments.

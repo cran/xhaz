@@ -29,7 +29,6 @@
 #' #                      linear and proportional effects for the covariates on
 #' #                      baseline excess hazard.
 #'
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' set.seed(1980)
 #' simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
@@ -244,14 +243,17 @@ summary.constant <-
           coef_alpha <- exp(coef[indxAlpha])
 
           mlevel <- abs(qnorm((1 - object$level) / 2))
+          if (inherits(attributes(object$terms)$factors, "matrix")) {
+            tmp_new <- cbind((exp(coef[index])),
+                             c(exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
+                             )) * se[1:nvar]),
+                             c(coef_alpha - mlevel * c(se_alpha))),
+                             c(exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
+                             )) * se[1:nvar]),
+                             coef_alpha + mlevel * c(se_alpha)))
 
-          tmp_new <- cbind((exp(coef[index])),
-                           c(exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
-                           )) * se[1:nvar]),
-                           c(coef_alpha - mlevel * c(se_alpha))),
-                           c(exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
-                           )) * se[1:nvar]),
-                           coef_alpha + mlevel * c(se_alpha)))
+            }
+
         } else {
           #lognormal based
           if (length(indxAlpha) > 1) {
@@ -265,36 +267,47 @@ summary.constant <-
           coef_alpha <- exp(coef[indxAlpha])
 
           mlevel <- abs(qnorm((1 - object$level) / 2))
+          if (inherits(attributes(object$terms)$factors, "matrix")) {
+            tmp_new <- cbind(c(exp(coef[1:nvar]), coef_alpha),
+                             c(exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
+                             )) *
+                               se[1:nvar]),
+                             exp(c(
+                               coef[indxAlpha] - mlevel * c(se_alpha)
+                             ))),
+                             c(exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
+                             )) *
+                               se[1:nvar]),
+                             exp(coef[indxAlpha] + mlevel * c(se_alpha))))
+          }
 
-          tmp_new <- cbind(c(exp(coef[1:nvar]), coef_alpha),
-                           c(exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
-                           )) *
-                             se[1:nvar]),
-                           exp(c(
-                             coef[indxAlpha] - mlevel * c(se_alpha)
-                           ))),
-                           c(exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
-                           )) *
-                             se[1:nvar]),
-                           exp(coef[indxAlpha] + mlevel * c(se_alpha))))
         }
 
 
       } else{
-        index <- c(1:nvar)
 
-        tmp_new <- cbind(exp(coef[1:nvar]),
-                         exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
-                         )) * se[1:nvar]),
-                         exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
-                         )) * se[1:nvar]))
+        if (inherits(attributes(object$terms)$factors, "matrix")) {
+          index <- c(1:nvar)
+
+          tmp_new <- cbind(exp(coef[1:nvar]),
+                           exp(coef[1:nvar] - abs(qnorm((1 - object$level) / 2
+                           )) * se[1:nvar]),
+                           exp(coef[1:nvar] + abs(qnorm((1 - object$level) / 2
+                           )) * se[1:nvar]))
+        }
+
       }
-      dimnames(tmp_new) <- list(names(coef[index]),
-                                c(
-                                  "exp(coef)",
-                                  paste("lower", object$level, sep = " "),
-                                  paste("upper", object$level, sep = " ")
-                                ))
+
+      if (inherits(attributes(object$terms)$factors, "matrix")) {
+
+        dimnames(tmp_new) <- list(names(coef[index]),
+                                  c(
+                                    "exp(coef)",
+                                    paste("lower", object$level, sep = " "),
+                                    paste("upper", object$level, sep = " ")
+                                  ))
+      }
+
 
 
 
@@ -305,8 +318,9 @@ summary.constant <-
           cat(
             "Excess hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
           )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
+          if (inherits(attributes(object$terms)$factors, "matrix")) {
+          lines_al <- which(stringr::str_detect(rownames(tmp_new),
+                                                pattern = "alpha"))
           print(tmp_new[-c(lines_al), ], digits = digits + 1)
           cat("\n")
           cat("and rescaled parameter on population hazard \n")
@@ -315,7 +329,7 @@ summary.constant <-
           dimnames(tmp_new_alpha)[[1]] <- "alpha"
           dimnames(tmp_new_alpha)[[2]] <- dimnames(tmp_new)[[2]]
           print(tmp_new_alpha, digits = digits + 1)
-
+          }
 
         } else if (object$pophaz == "corrected" &
                    object$add.rmap.cut$breakpoint == FALSE) {
@@ -323,20 +337,23 @@ summary.constant <-
           cat(
             "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
           )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
+          if (inherits(attributes(object$terms)$factors, "matrix")) {
+          lines_al <- which(stringr::str_detect(rownames(tmp_new),
+                                                pattern = "alpha"))
           print(tmp_new[-c(lines_al), ], digits = digits + 1)
           cat("\n")
           cat("and corrected scale parameters on population hazard \n")
           print(tmp_new[c(lines_al), ], digits = digits + 1)
+          }
         } else if (object$pophaz == "corrected" &
                    object$add.rmap.cut$breakpoint == TRUE) {
           cat("\n")
           cat(
             "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
           )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
+          if (inherits(attributes(object$terms)$factors, "matrix")) {
+          lines_al <- which(stringr::str_detect(rownames(tmp_new),
+                                                pattern = "alpha"))
           print(tmp_new[-c(lines_al), ], digits = digits + 1)
           cat("\n")
           cat(
@@ -345,6 +362,8 @@ summary.constant <-
           cat("\n")
 
           print(tmp_new[c(lines_al), ], digits = digits + 1)
+          }
+
 
           if (!is.na(object$add.rmap.cut$cut[1])) {
             n_break <- length(object$add.rmap.cut$cut)
@@ -361,7 +380,9 @@ summary.constant <-
         cat(
           "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
         )
+        if (inherits(attributes(object$terms)$factors, "matrix")) {
         print(tmp_new, digits = digits + 1)
+        }
       }
 
 
@@ -433,9 +454,12 @@ summary.constant <-
 
 
     }
-    if (any(tmp_new[, "lower 0.95"] < 0)) {
-      warning("\nlower 0.95 CI approximation may be incorrect")
-    }
+    if (inherits(attributes(object$terms)$factors, "matrix")) {
+      if (any(tmp_new[, "lower 0.95"] < 0, na.rm = TRUE)) {
+        warning("\nlower 0.95 CI approximation may be incorrect")
+      }
+      }
+
     invisible()
   }
 

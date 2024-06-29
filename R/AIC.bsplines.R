@@ -1,7 +1,7 @@
-#' @title Akaike's An Information Criterion for excess hazard model with
+#' @title Akaike's Information Criterion for excess hazard model with
 #' baseline hazard following a B-splines functions
 #'
-#' @description Calculates the Akaike's ‘An Information Criterion’ for fitted
+#' @description Calculates the Akaike's 'An Information Criterion' for fitted
 #' models from `xhaz`.
 #'
 #' @param object a fitted model object obtained from `xhaz` function
@@ -39,8 +39,8 @@
 #' AIC(fitphBS)
 #' }
 #'
-#'
 #' @export
+#' @keywords internal
 AIC.bsplines <- function(object, ..., k = 2) {
 
   dots.object <- list(...)

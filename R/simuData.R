@@ -23,14 +23,14 @@
 #'
 #' @keywords datasets
 #'
-#' @references Goungounga JA, Touraine C, Grafféo N, Giorgi R;
+#' @references Goungounga JA, Touraine C, Graff\'eo N, Giorgi R;
 #' CENSUR working survival group. Correcting for misclassification
 #' and selection effects in estimating net survival in clinical trials.
 #' BMC Med Res Methodol. 2019 May 16;19(1):104.
 #' doi: 10.1186/s12874-019-0747-3. PMID: 31096911; PMCID: PMC6524224.
 #' (\href{https://pubmed.ncbi.nlm.nih.gov/31096911/}{PubMed})
 #'
-#' Touraine C, Grafféo N, Giorgi R; CENSUR working survival group.
+#' Touraine C, Graff\'eo N, Giorgi R; CENSUR working survival group.
 #' More accurate cancer-related excess mortality through correcting
 #' background mortality for extra variables.
 #' Stat Methods Med Res. 2020 Jan;29(1):122-136.

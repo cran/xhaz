@@ -40,19 +40,20 @@ indicator equal to \code{0} for all observations.
 \examples{
 
 ## Create the simplest test data set
-data1 <- data.frame(futime = c(1, 2, 5, 2, 1, 7, 3, 4, 8, 8),
-                    fustat = c(0, 1, 1, 1, 0, 0, 1, 0, 1, 1),
+data1 <- data.frame(futime     = c(1, 2, 5, 2, 1, 7, 3, 4, 8, 8),
+                    fustat     = c(0, 1, 1, 1, 0, 0, 1, 0, 1, 1),
                     firstevent = c(0, 2, 1, 2, 0, 0, 1, 0, 2, 2),
-                    x = c(1, 0, 0, 1, 0, 1, 1, 1, 0, 0))
+                    sex        = c(1, 0, 0, 1, 0, 1, 1, 1, 0, 0))
 
 ## Duplicate data1 with firstevent == 0 as the censoring indicator.
+library(xhaz)
 dupli.data <- duplicate(status=fustat, event=firstevent, data=data1)
 
 
 data2 <- data.frame(futime = c(10, 2, 7, 3, 4, 9, 13, 2, 5, 9),
                     fustat = c(0, 1, 1, 1, 0, 0, 1, 0, 1, 1),
                     firstevent = c(3, 2, 1, 2, 3, 3, 1, 3, 2, 2),
-                    x = c(1, 0, 0, 1, 0, 1, 1, 1, 0, 0))
+                    sex = c(1, 0, 0, 1, 0, 1, 1, 1, 0, 0))
 
 
 ## Duplicate data1 with firstevent == 3 as the censoring indicator.
@@ -63,9 +64,48 @@ dupli.data <- duplicate(status = fustat,
 
 
 # Joint modeling
-coxph(Surv(futime, fustat) ~ delta.2 + x + delta.2:(x), data = dupli.data)
+coxph(Surv(futime, fustat) ~ delta.2 + sex + delta.2:(sex), data = dupli.data)
 
-coxph(Surv(futime, fustat) ~ delta.1 + x + delta.1:(x), data = dupli.data)
+coxph(Surv(futime, fustat) ~ delta.1 + sex + delta.1:(sex), data = dupli.data)
+
+# exemple using ccr.mevents data
+
+
+ccr.mevents$loc.rec <- as.numeric(ccr.mevents$event == 1)
+ccr.mevents$dist.rec <- as.numeric(ccr.mevents$event == 2)
+ccr.mevents$death <- as.numeric(ccr.mevents$event == 3)
+# Age centered to mean and scaled
+ccr.mevents$agecr <-  scale(ccr.mevents$age, TRUE, TRUE)
+
+## Duplication of the data with local recurrence as the reference
+dupli.ccr.mevents <- duplicate(status = status,
+                               event = event, data = ccr.mevents)
+head(dupli.ccr.mevents)
+# joint model including overall mortality modelling
+fit <- coxph(Surv(time, status) ~ agecr + sexe + stage + delta.2 + delta.3,
+             data = dupli.ccr.mevents)
+
+fit
+
+# add expected mortality from french life table to the data
+
+
+library(survexp.fr)
+fit.haz <- exphaz(formula = Surv(time, death) ~ 1,
+                  data = dupli.ccr.mevents,
+                  ratetable = survexp.fr, only_ehazard = TRUE,
+                  rmap = list(age = 'age', sex = 'sexe', year = 'date_diag'))
+
+ dupli.ccr.mevents$mua <- fit.haz$ehazard * dupli.ccr.mevents$delta.3
+
+# joint model including excess hazard modelling
+library(mexhaz)
+fit.mort <- mexhaz(
+    Surv(time, status) ~ delta.2 + delta.3,
+    data = dupli.ccr.mevents, base = "exp.bs", degree = 3, knots = c(1),
+    expected = "mua")
+
+fit.mort
 
 
 }

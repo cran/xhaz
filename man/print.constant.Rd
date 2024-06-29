@@ -35,7 +35,6 @@ data("simuData","rescaledData", "dataCancer")
 #                      linear and proportional effects for the covariates on
 #                      baseline excess hazard.
 
-levels(simuData$sex) <- c("male", "female")
 set.seed(1980)
 simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
 

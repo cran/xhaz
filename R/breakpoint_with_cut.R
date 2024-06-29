@@ -18,7 +18,7 @@ breakpoint_with_cut <- function(formula = formula,
                                 scale = scale,
                                 trace = trace,
                                 speedy = speedy,
-                                nghq = nghq, m_int = m_int, rcall,...) {
+                                nghq = nghq, m_int = m_int, rcall, method,...) {
   time_elapsed0 <- as.numeric(base::proc.time()[3])
 
 
@@ -55,7 +55,7 @@ breakpoint_with_cut <- function(formula = formula,
                         trace = trace,
                         speedy = speedy,
                         nghq = nghq, m_int = m_int,
-                        rcall = rcall, ...)
+                        rcall = rcall, method = method, ...)
 
 
     fit$splitting <- tsplitting

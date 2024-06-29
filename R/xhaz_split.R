@@ -138,15 +138,15 @@ xhaz_split <- function(formula = formula(data),
 
         if (!is.na(add.rmap.cut$cut[1])) {
 
-          if (min(add.rmap.cut$cut) < min(c(data$age, data$age + data$time))) {
-            if (max(add.rmap.cut$cut) <= max(c(data$age, data$age + data$time))) {
+          if (min(add.rmap.cut$cut) < min(c(data[, rmap$age], data[, rmap$age] + data$time))) {
+            if (max(add.rmap.cut$cut) <= max(c(data[, rmap$age], data[, rmap$age] + data$time))) {
               stop("Breakpoint(s) is (are) smaller than the minimum age")
             } else
               stop(
                 "Breakpoint(s) is (are) smaller than the minimum age and breakpoint(s) greater than the maximum age"
               )
           } else{
-            if (max(add.rmap.cut$cut) > max(c(data$age, data$age + data$time)))
+            if (max(add.rmap.cut$cut) > max(c(data[, rmap$age], data[, rmap$age] + data$time)))
               stop("Breakpoint(s) is (are) greater than the maximum age")
           }
 

@@ -21,6 +21,7 @@ xhaz2 <- function(formula = formula,
                   nghq = nghq,
                   m_int = m_int,
                   rcall = rcall,
+                  method = method,
                   ...) {
   time_elapsed0 <- as.numeric(base::proc.time()[3])
 
@@ -72,12 +73,15 @@ xhaz2 <- function(formula = formula,
     stop("Missing data data frame in which to interpret
            the variables named in the formula.")
   } else{
-    if (is.na(match(rmap$age, names(data))))
+    if (is.na(match(rmap$age, names(data)))) {
       stop("Must have informations for age on the data set.")
-    if (is.na(match(rmap$sex, names(data))))
+    }
+    if (is.na(match(rmap$sex, names(data)))) {
       stop("Must have informations for sex on the data set.")
-    if (is.na(match(rmap$year, names(data))))
+    }
+    if (is.na(match(rmap$year, names(data)))) {
       stop("Must have informations for date on the data set.")
+    }
   }
 
   if (!missing(ratetable)) {
@@ -95,12 +99,15 @@ xhaz2 <- function(formula = formula,
     }
 
 
-
     varsexID <- try(which(varlist == 'sex'))
     conditionVsex <- attr(ratetable, which = "dimnames")[[varsexID]]
-    if (any(!conditionVsex %in% c('male', 'female'))) {
-      conditionVsex <-
-        c('male', 'female')[c(which(conditionVsex %in% c('male', 'female')))]
+    condsexdata <- unique(data[, rmap$sex])
+    if (any(conditionVsex %in% condsexdata)) {
+      conditionVsex <- condsexdata
+    } else{
+      stop(
+        "Please check the matching between the levels of sex \nin the data.frame and in the ratetable used."
+      )
     }
 
 
@@ -129,7 +136,7 @@ xhaz2 <- function(formula = formula,
     temp02 <- match(as.vector(unlist(rmap)), names(data))
     if (any(is.na(temp02))) {
       stop("Variable not found in the data set:",
-           (names(rcall))[is.na(temp02)])
+           rmap[[which(is.na(temp02))]])
     }
 
   }
@@ -141,15 +148,16 @@ xhaz2 <- function(formula = formula,
     } else {
       if (add.rmap.cut$breakpoint == TRUE) {
         if (!is.na(add.rmap.cut$cut[1])) {
-          if (min(add.rmap.cut$cut) < min(c(data$age, data$age + data$time))) {
-            if (max(add.rmap.cut$cut) <= max(c(data$age, data$age + data$time))) {
+
+          if (min(add.rmap.cut$cut) < min(c(data[, rmap$age], data[, rmap$age] + data$time))) {
+            if (max(add.rmap.cut$cut) <= max(c(data[, rmap$age], data[, rmap$age] + data$time))) {
               stop("Breakpoint(s) is (are) smaller than the minimum age")
             } else
               stop(
                 "Breakpoint(s) is (are) smaller than the minimum age and breakpoint(s) greater than the maximum age"
               )
           } else{
-            if (max(add.rmap.cut$cut) > max(c(data$age, data$age + data$time)))
+            if (max(add.rmap.cut$cut) > max(c(data[, rmap$age], data[, rmap$age] + data$time)))
               stop("Breakpoint(s) is (are) greater than the maximum age")
           }
 
@@ -506,7 +514,8 @@ xhaz2 <- function(formula = formula,
         ageDC,
         optim,
         trace,
-        speedy
+        speedy,
+        method
       )
     } else if (add.rmap.cut$breakpoint == TRUE &
                !is.na(add.rmap.cut$cut[1]) &
@@ -532,7 +541,8 @@ xhaz2 <- function(formula = formula,
         ageDC,
         optim,
         trace,
-        speedy
+        speedy,
+        method
       )
     } else if (add.rmap.cut$breakpoint == TRUE &
                is.na(add.rmap.cut$cut[1]) &
@@ -689,10 +699,8 @@ xhaz2 <- function(formula = formula,
 
                        tofit[[i]]$level <- control$level
                        tofit[[i]]$interval <- interval
-                       tofit[[i]]$n.events <-
-                         sum(event, na.rm = TRUE)
-                       tofit[[i]]$formula <-
-                         as.vector(attr(Terms, "formula"))
+                       tofit[[i]]$n.events <- sum(event, na.rm = TRUE)
+                       tofit[[i]]$formula <- as.vector(attr(Terms, "formula"))
                        tofit[[i]]$call <- m_int
                        tofit[[i]]$varcov <- tofit[[i]]$var
                        tofit[[i]][["var"]] <- NULL
@@ -706,11 +714,6 @@ xhaz2 <- function(formula = formula,
                        }
                        oldClass(tofit[[i]]) <- "constant"
                      }
-
-
-
-
-
 
                      if (length(which(stringr::str_detect(
                        names(tofit[[i]]), "coefficients"
@@ -729,21 +732,27 @@ xhaz2 <- function(formula = formula,
 
 
 
-        allAIC <-
-          suppressWarnings(sapply(1:length(tofit), function(i)
+        allAIC <- suppressWarnings(sapply(1:length(tofit), function(i)
             as.numeric(try(tofit[[i]]$AIC, TRUE))))
-        allBIC <-
-          suppressWarnings(sapply(1:length(tofit), function(i)
+        allBIC <- suppressWarnings(sapply(1:length(tofit), function(i)
             as.numeric(try(tofit[[i]]$BIC, TRUE))))
-
-
+        browser()
         if (isTRUE(which(names(add.rmap.cut) %in% "criterion") > 0)) {
           if (add.rmap.cut$criterion == "AIC") {
-            fit <- tofit[[which.min(allAIC)]]
-            fit$add.rmap.cut$cut <- c(cut2[which.min(allAIC),])
+            if (any(!is.na(allAIC))) {
+              fit <- tofit[[which.min(allAIC)]]
+              fit$add.rmap.cut$cut <- c(cut2[which.min(allAIC),])
+               }else {
+              stop("\nNo convergence for any model")
+            }
           } else if (add.rmap.cut$criterion == "BIC") {
-            fit <- tofit[[which.min(allBIC)]]
-            fit$add.rmap.cut$cut <- c(cut2[which.min(allBIC),])
+           if (any(!is.na(allBIC))) {
+             fit <- tofit[[which.min(allBIC)]]
+             fit$add.rmap.cut$cut <- c(cut2[which.min(allBIC),])
+           }else {
+             stop("\nNo convergence for any model")
+           }
+
           }
 
         } else{
@@ -776,7 +785,6 @@ xhaz2 <- function(formula = formula,
 
 
         nmodels <- nrow(cut2)
-
 
         tofit <- lapply(1:nmodels, function(i) {
           add.rmap.cut$cut <- cut2[i, ]
@@ -819,8 +827,6 @@ xhaz2 <- function(formula = formula,
           }
         }
 
-
-
         allAIC <-
           suppressWarnings(sapply(1:length(tofit), function(i)
             as.numeric(try(tofit[[i]]$AIC, TRUE))))
@@ -838,10 +844,7 @@ xhaz2 <- function(formula = formula,
           fit <- tofit[[which.min(allBIC)]]
           fit$add.rmap.cut$cut <- c(cut2[which.min(allBIC),])
         }
-
       }
-
-
     }
 
 
@@ -869,7 +872,8 @@ xhaz2 <- function(formula = formula,
       optim,
       trace,
       speedy,
-      nghq
+      nghq,
+      method
     )
     oldClass(fit) <- "bsplines"
     fit$z_bsplines <- z_X_vect

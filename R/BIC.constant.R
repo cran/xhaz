@@ -1,7 +1,7 @@
 #' @title Bayesian Information Criterion for excess hazard model with
 #' baseline hazard following a piecewise constant function
 #'
-#' @description Calculates the Bayesian Information Criterion’ for fitted
+#' @description Calculates the Bayesian Information Criterion' for fitted
 #' models from `xhaz`.
 #'
 #' @param object a fitted model object obtained from `xhaz` function
@@ -20,7 +20,6 @@
 #'#                      linear and proportional effects for the covariates on
 #'#                      baseline excess hazard.
 #'
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' set.seed(1980)
 #' simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
@@ -36,7 +35,7 @@
 #'
 #' BIC(fit.estv2)
 #'
-#'
+#' @keywords internal
 #' @export
 
 BIC.constant <- function(object, ...) {
@@ -45,7 +44,7 @@ BIC.constant <- function(object, ...) {
   if (length(dots.object) == 0) {
     if (inherits(object, "constant")) {
       df <- length(object$coefficients)
-      val <- (log(length(object$n)) * length(object$coefficients) - 2 * (object$loglik))[2]
+      val <- (log((object$n)) * length(object$coefficients) - 2 * (object$loglik))[2]
     } else{
       stop("object must be a xhaz function output")
     }
@@ -57,7 +56,7 @@ BIC.constant <- function(object, ...) {
         df <- length(object[[i]]$coefficients)
 
         val <-
-          (log(length(object[[i]]$n)) * length(object[[i]]$coefficients) - 2 * (object[[i]]$loglik))[2]
+          (log((object[[i]]$n)) * length(object[[i]]$coefficients) - 2 * (object[[i]]$loglik))[2]
         resval <- data.frame(df = df, AIC = val)
         return(resval)
       } else{

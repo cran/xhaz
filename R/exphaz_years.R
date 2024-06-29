@@ -10,7 +10,7 @@ exphaz_years <- function(ageDiag,
                          temp01,
                          scale,
                          pophaz,
-                         only_ehazard){
+                         only_ehazard) {
 
   if (missing(ratetable)) {
     ageDC <- ageDiag + floor(time)
@@ -55,66 +55,87 @@ exphaz_years <- function(ageDiag,
         "Please check the scale used for time of follow-up: it must be in year; also check the age of diagnosis for older patients.\n"
       )
     }
+
+
+    if (!inherits(data[, rmap$year], "Date")) {
+      stop("Year must be in a Date class")
+    }
     year <- as.integer(format(((data[, rmap$year]) +
-                                 as.difftime(time * scale, #30.43685,
+                                 as.difftime(time * scale,
                                              units = "days")
     ), "%Y"))
 
     RT <- attr(ratetable, which = "dimnames")
     RTyear <- which(varlist == 'year')
-    if (max(year) > max(RT[[RTyear]]))
-      year[c(year > max(RT[[RTyear]]))] <-
-      max(RT[[which(varlist == 'year')]])
+    RTageDC <- which(varlist == 'age')
+
+    if (max(year) > as.numeric(max(RT[[RTyear]]))) {
+      idyearmax <- which(c(year > as.numeric(max(RT[[RTyear]]))))
+      year[c(year > as.numeric(max(RT[[RTyear]])))] <- as.numeric(max(RT[[which(varlist == 'year')]]))
+      cat("\nmax year+time in the data:\n", as.numeric(max(RT[[RTyear]])))
+      cat("\nmax year+time considered:\n", as.numeric(max(RT[[RTyear]])))
+    }
+
+
+    if (max(ageDC) > as.numeric(max(RT[[RTageDC]]))) {
+      idageDCmax <- which(c(ageDC > as.numeric(max(RT[[RTageDC]]))))
+
+      ageDC[c(ageDC > as.numeric(max(RT[[RTageDC]])))] <- as.numeric(max(RT[[which(varlist == 'age')]]))
+    cat("\nmax age+time in the data:\n", as.numeric(max(RT[[RTageDC]])))
+    cat("\nmax age+time considered:\n", as.numeric(max(RT[[RTageDC]])))
+      }
     nb.age.dc <- length(RT[[which(varlist == 'age')]])
 
     newdata01 <- data[, as.vector(unlist(rmap))[temp01]]
     names(newdata01) <- varlist
     newdata01$age <- trunc(ageDC)
     newdata01$year <- year
-    if (length(levels(newdata01$sex)) < 2) {
-      stop("It is required to provide the two levels for variable sex, i.e. male and female.")
-    }
 
     Indic01  <- sapply(1:ncol(newdata01), function(i)
       apply(outer(newdata01[, temp01[i]], RT[[temp01[i]]], "=="), 1,
             function(x)
               which(x)))
-
+    Indic01 <- Indic01[, temp01]
     colnames(Indic01) <- names(newdata01)
 
-    ehazard <- mapply(function(i) {
-      return(ratetable[matrix(Indic01[i, ], nrow = 1)])
-    }, 1:length(ageDC)) * scale
+if (is.list((Indic01)[1,])) {
+  ehazard <- mapply(function(i) {
+    return( ratetable[matrix(unlist(as.data.frame(Indic01)[i,]),nrow = 1)])
+  }, 1:length(ageDC)) * scale
+
+}else if (is.integer((Indic01)[1,])) {
+  ehazard <- mapply(function(i) {
+    return(ratetable[matrix(Indic01[i, ], nrow = 1)])
+  }, 1:length(ageDC)) * scale
+}
+
 
     if (only_ehazard) {
       dateDiag <- data[, rmap$year]
       return(list(ehazard = ehazard,
                   dateDiag = dateDiag))
     } else{
-      newdata02 <-
-        data[, as.vector(unlist(rmap))[temp01]]#table matching life table and data
+      newdata02 <- data[, as.vector(unlist(rmap))[temp01]]#table matching life table and data
       names(newdata02) <- varlist
       newdata02$age <- trunc(ageDiag)
       newdata02$year <- as.integer(format(data[, rmap$year], '%Y'))
 
 
 
-      Indic02 <-
-        sapply(1:length(temp01), function(i)
-          apply(outer(newdata02[, temp01[i]],
-                      RT[[temp01[i]]], "=="),
-                1,
-                function(x)
-                  which(x)))
+      Indic02 <-sapply(1:length(temp01), function(i) {
+        apply(outer(newdata02[, temp01[i]],
+                    RT[[temp01[i]]], "=="), 1,
+              function(x) {
+                which(x)
+                })})
+
+      Indic02 <- Indic02[, temp01]
       colnames(Indic02) <- names(newdata02)
-
-      dateDC <-
-        data[, rmap$year] + as.difftime(time * scale, units = "days")
+      dateDC <- data[, rmap$year] + as.difftime(time * scale, units = "days")
       diffAge <- ceiling(data[, rmap$age]) - data[, rmap$age]
-      dateAnniv <-
-        data[, rmap$year] + as.difftime(diffAge * scale, units = "days")
+      dateAnniv <- data[, rmap$year] +
+        as.difftime(diffAge * scale, units = "days")
       nb.anne <- trunc(time)
-
       dateapdiag <- as.Date(data[, rmap$year] + scale)
       nbj <- difftime(dateapdiag,
                       data[, rmap$year],
@@ -151,34 +172,25 @@ exphaz_years <- function(ageDiag,
 
 
           if (length(id11) != 0) {
-            res <- paste(format(data[id11, rmap$year] + nbj[id11] * nb.anne[id11], '%Y'),
-                         format(data[id11, rmap$year], '%m-%d'),
-                         sep = '-')
-
-
+            res <- data[id11, rmap$year] + nbj[id11] * nb.anne[id11]
             res2 <- try(class(as.Date(res)), TRUE)
             if (inherits(res2, "try-error")) {
               resfin <- paste(format(data[id11, rmap$year] + nbj[id11] * nb.anne[id11], '%Y'),
                               format(data[id11, rmap$year] + 1, '%m-%d'),
                               sep = '-')
             } else{
-              resfin <- paste(format(data[id11, rmap$year] + nbj[id11] * nb.anne[id11], '%Y'),
-                              format(data[id11, rmap$year], '%m-%d'),
-                              sep = '-')
+              resfin <- data[id11, rmap$year] + nbj[id11] * nb.anne[id11]
             }
 
-            coef04[id11] <-
-              difftime(dateDC[id11], as.Date(resfin), units = "days")
-
-            coef04[id11][which(coef04[id11] < 0)] <- 0
+            coef04[id11] <- difftime(dateDC[id11], as.Date(resfin),
+                                     units = "days")
+            if (any(coef04[id11] < 0)) {
+              coef04[id11][which(coef04[id11] < 0)] <- 0
+            }
           }
 
           id12 <- intersect(id1AF,
-                            which(dateDC > as.Date(paste(
-                              format(dateAnniv + nbj * nb.anne, '%Y'),
-                              format(dateAnniv, '%m-%d'),
-                              sep = '-'
-                            )) &
+                            which(dateDC > (dateAnniv + nbj * nb.anne) &
                               dateDC <= as.Date(paste0(
                                 format(data[, rmap$year] + nbj * nb.anne, '%Y'),
                                 "-12-31"
@@ -186,11 +198,7 @@ exphaz_years <- function(ageDiag,
 
 
           if (length(id12) != 0) {
-            coef05[id12] <- difftime(dateDC[id12], as.Date(paste(
-              format(dateAnniv[id12] + nbj[id12] * nb.anne[id12], '%Y'),
-              format(dateAnniv[id12], '%m-%d'),
-              sep = '-'
-            )), units = "days")
+            coef05[id12] <- difftime(dateDC[id12], as.Date(dateAnniv[id12] + nbj[id12] * nb.anne[id12]), units = "days")
           }
           id13 <- intersect(id1AF, which(dateDC >= as.Date(paste0(
             format(data[, rmap$year] + nbj * (1 + nb.anne), '%Y'), "-01-01"
@@ -235,22 +243,16 @@ exphaz_years <- function(ageDiag,
 
           if (length(id14) != 0) {
             coef04[id14] <- difftime(dateDC[id14],
-                                     as.Date(paste(
-                                       format(data[id14, rmap$year] +
-                                                nbj[id14] * nb.anne[id14], '%Y'),
-                                       format(data[id14, rmap$year], '%m-%d'),
-                                       sep = '-'
-                                     )),
+                                     c(data[id14, rmap$year] +
+                                         nbj[id14] * nb.anne[id14]),
                                      units = "days")
+            if(any(coef04[id14] < 0)){
+              coef04[id14][which(coef04[id14] < 0)] <- 0
+            }
 
-            coef04[id14][which(coef04[id14] < 0)] <- 0
           }
           id15 <- intersect(id1FA,
-                            which(dateDC <= as.Date(paste(
-                              format(dateAnniv + nbj * nb.anne, '%Y'),
-                              format(dateAnniv, '%m-%d'),
-                              sep = '-'
-                            )) &
+                            which(dateDC <= as.Date(dateAnniv + nbj * nb.anne) &
                               dateDC >= as.Date(paste0(
                                 format(data[, rmap$year] +
                                          nbj * (1 + nb.anne), '%Y'),
@@ -269,18 +271,13 @@ exphaz_years <- function(ageDiag,
           }
 
           id16 <- intersect(id1FA,
-                            which(dateDC > as.Date(paste(
-                              format(dateAnniv + nbj * nb.anne, '%Y'),
-                              format(dateAnniv, '%m-%d'),
-                              sep = '-'
-                            ))))
+                            which(dateDC > as.Date(dateAnniv + nbj * nb.anne)))
 
           if (length(id16) != 0) {
-            coef06[id16] = difftime(dateDC[id16], as.Date(paste(
-              format(dateAnniv[id16] + nbj[id16] * nb.anne[id16], '%Y'),
-              format(dateAnniv[id16], '%m-%d'),
-              sep = '-'
-            )), units = "days")
+            coef06[id16]  <- difftime(dateDC[id16],
+                                      as.Date(dateAnniv[id16] +
+                                                nbj[id16] * nb.anne[id16]),
+                                      units = "days")
           }
         }
       }
@@ -288,8 +285,7 @@ exphaz_years <- function(ageDiag,
       id2 <- which(nb.anne != 0 &
                      dateAnniv == data[, rmap$year])
       if (length(id2) != 0) {
-        coef01[id2] <-
-          difftime(as.Date(paste0(format(data[id2, rmap$year], '%Y'),
+        coef01[id2] <- difftime(as.Date(paste0(format(data[id2, rmap$year], '%Y'),
                                   "-12-31")),
                    data[id2, rmap$year], units = "days")
         coef02[id2] <- nbj[id2] - coef01[id2]
@@ -317,8 +313,7 @@ exphaz_years <- function(ageDiag,
                                      format(data[id22, rmap$year] +
                                               nbj[id22] * (1 + nb.anne[id22]),
                                             '%Y'),
-                                     "-01-01"
-                                   )),
+                                     "-01-01")),
                                    units = "days")
         }
 
@@ -332,11 +327,7 @@ exphaz_years <- function(ageDiag,
                            ))))
 
         if (length(id3AF) != 0) {
-          id31 <- intersect(id3AF, which(dateDC <= as.Date(paste(
-            format(dateAnniv, '%Y'),
-            format(dateAnniv, '%m-%d'),
-            sep = '-'
-          ))))
+          id31 <- intersect(id3AF, which(dateDC <= as.Date(dateAnniv)))
 
           if (length(id31) != 0) {
             coef01[id31] <- difftime(dateDC[id31],
@@ -359,11 +350,7 @@ exphaz_years <- function(ageDiag,
                                      units = "days")
 
             coef02[id32] <- difftime(dateDC[id32],
-                                     as.Date(paste(
-                                       format(dateAnniv[id32], '%Y'),
-                                       format(dateAnniv[id32], '%m-%d'),
-                                       sep = '-'
-                                     )),
+                                     as.Date(dateAnniv[id32]),
                                      units = "days")
           }
 
@@ -419,11 +406,7 @@ exphaz_years <- function(ageDiag,
 
 
           id35 <- intersect(id3FA,
-                            which(dateDC <= as.Date(paste(
-                              format(dateAnniv, '%Y'),
-                              format(dateAnniv, '%m-%d'),
-                              sep = '-'
-                            )) &
+                            which(dateDC <= as.Date(dateAnniv) &
                               dateDC >= as.Date(paste0(
                                 format(data[, rmap$year] +
                                          nbj * (1 + nb.anne), '%Y'),
@@ -449,24 +432,17 @@ exphaz_years <- function(ageDiag,
           }
 
 
-          id36 <- intersect(id3FA,
-                            which(dateDC > as.Date(paste(
-                              format(dateAnniv, '%Y'),
-                              format(dateAnniv, '%m-%d'),
-                              sep = '-'
-                            ))))
+          id36 <- intersect(id3FA, which(dateDC > as.Date(dateAnniv)))
 
           if (length(id36) != 0) {
             coef01[id36] <- difftime(as.Date(paste0(format(
-              data[id36, rmap$year], '%Y'
-            ), "-12-31")),
+              data[id36, rmap$year], '%Y'), "-12-31")),
             data[id36, rmap$year], units = "days")
 
             coef02[id36] <- difftime(dateAnniv[id36],
                                      as.Date(paste0(
                                        format(data[id36, rmap$year] +
-                                                nbj[id36], '%Y'), "-01-01"
-                                     )),
+                                                nbj[id36], '%Y'), "-01-01")),
                                      units = "days")
 
             coef03[id36] <- difftime(dateDC[id36], as.Date(paste(
@@ -518,10 +494,8 @@ exphaz_years <- function(ageDiag,
       }
 
 
-      coefs <-
-        data.frame(coef01, coef02, coef03, coef04, coef05, coef06)
+      coefs <- data.frame(coef01, coef02, coef03, coef04, coef05, coef06)
       dateDiag <- data[, rmap$year]
-
 
       ehazardInt <- mapply(
         FUN = cumpop,

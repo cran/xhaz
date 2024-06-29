@@ -19,7 +19,7 @@ If multiple objects are provided, a data.frame with columns corresponding to the
 objects and rows representing the number of parameters in the model (df) and the BIC.
 }
 \description{
-Calculates the Bayesian Information Criterion’ for fitted
+Calculates the Bayesian Information Criterion' for fitted
 models from \code{xhaz}.
 }
 \examples{
@@ -30,7 +30,6 @@ library("xhaz")
 #                    function with two interior knots and allow here a
 #                    linear and proportional effects for the covariates on
 #                    baseline excess hazard.
-levels(simuData$sex) <- c("male", "female")
 
 fitphBS <- xhaz(formula = Surv(time_year, status) ~ agec + race,
                 data = simuData,
@@ -42,4 +41,6 @@ fitphBS <- xhaz(formula = Surv(time_year, status) ~ agec + race,
 fitphBS
 BIC(fitphBS)
 }
+
 }
+\keyword{internal}

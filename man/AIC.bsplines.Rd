@@ -2,7 +2,7 @@
 % Please edit documentation in R/AIC.bsplines.R
 \name{AIC.bsplines}
 \alias{AIC.bsplines}
-\title{Akaike's An Information Criterion for excess hazard model with
+\title{Akaike's Information Criterion for excess hazard model with
 baseline hazard following a B-splines functions}
 \usage{
 \method{AIC}{bsplines}(object, ..., k = 2)
@@ -22,7 +22,7 @@ If multiple objects are provided, a data.frame with columns corresponding to the
 objects and rows representing the number of parameters in the model (df) and the AIC
 }
 \description{
-Calculates the Akaike's ‘An Information Criterion’ for fitted
+Calculates the Akaike's 'An Information Criterion' for fitted
 models from \code{xhaz}.
 }
 \examples{
@@ -46,5 +46,5 @@ fitphBS
 AIC(fitphBS)
 }
 
-
 }
+\keyword{internal}

@@ -1,6 +1,7 @@
 esteve.ph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
                           init, control, event, Terms,strats, add.rmap,
-                          add.rmap.cut, ageDiag, ageDC, optim, trace, speedy) {
+                          add.rmap.cut, ageDiag, ageDC, optim, trace, speedy,
+                          method) {
 
   k <- length(int) - 1
   nvar <- ncol(x)
@@ -142,7 +143,8 @@ esteve.ph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
                                     add.rmap.cut = add.rmap.cut,
                                     ageDiag = ageDiag,
                                     trace = trace,
-                                    speedy = speedy)
+                                    speedy = speedy,
+                                    method = method)
     }
   else{
     Fmodel <- esteve.ph.maxim(x = x, y,
@@ -188,7 +190,8 @@ esteve.ph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
                                       add.rmap.cut = add.rmap.cut,
                                       ageDiag = ageDiag,
                                       trace = trace,
-                                      speedy = speedy)
+                                      speedy = speedy,
+                                      method = method)
 
       } else{
       Nmodel <- esteve.ph.maxim(x = xN, y = y,
@@ -280,8 +283,10 @@ esteve.ph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
     Tmodel$wald.test <- wald.test
     Tmodel$score.test <- score.test
     Tmodel$loglik.test <- loglik.test
-    var <- solve(Fmodel$SD)
-    dimnames(var) <- list(names(theta0), names(theta0))
+    var <- try(solve(Fmodel$SD), TRUE)
+    if (inherits(var,"try-error")) {
+      dimnames(var) <- list(names(theta0), names(theta0))
+    }
     list(
       coefficients = Fmodel$theta0,
       var = var,
@@ -298,7 +303,7 @@ esteve.ph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
 
   } else{
     cov.test <- FALSE
-    var <- solve(Fmodel$SD)
+    var <- try(solve(Fmodel$SD), TRUE)
 
     dimnames(var) <- list(names(theta0), names(theta0))
     if (optim) {

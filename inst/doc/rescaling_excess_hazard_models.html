@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>How to implement a rescaled random-effects excess hazard regression model to handle situations involving inappropriate life tables.</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">How to implement a rescaled random-effects
+excess hazard regression model to handle situations involving
+inappropriate life tables.</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(xhaz)</span></code></pre></div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>xhaz is an R package for fitting excess hazard regression models,
+with or without the assumption of proportional hazards. In the presence
+of hierarchical data, inter-cluster heterogeneity can affect excess
+hazard estimates. To address this issue, the mexhaz R package implements
+multilevel excess hazard regression models. If the user wants to check
+the validity of the non-comparability bias, an easy way is to use the
+mexhazLT function of the xhaz R package. The user can also specify
+whether the framework is consistent with classical excess hazard
+modeling, i.e., assuming that the expected mortality of the individuals
+studied is appropriate, using the pophaz argument is equivalent to
+classical. The user can also consider a different framework by
+specifying that pophaz equals rescaled: the expected mortality available
+in the life table is not accurate, i.e., there is a non-comparability
+source of bias with respect to the expected mortality of the study
+population <a href="https://pubmed.ncbi.nlm.nih.gov/36890623/">Goungounga et
+al. (2023)</a>.</p>
+<p>(<em>Here’s the abstract from Goungounga et al. (2023) paper:</em> In
+the presence of competing causes of event occurrence (e.g., death), the
+interest might not only be in the overall survival but also in the
+so-called net survival, that is, the hypothetical survival that would be
+observed if the disease under study were the only possible cause of
+death. Net survival estimation is commonly based on the excess hazard
+approach in which the hazard rate of individuals is assumed to be the
+sum of a disease-specific and expected hazard rate, supposed to be
+correctly approximated by the mortality rates obtained from general
+population life tables…</p>
+<p>A related software package can be found at a gitlab webpage or at <a href="https://CRAN.R-project.org/package=xhaz" class="uri">https://CRAN.R-project.org/package=xhaz</a>.</p>
+<div id="installation" class="section level2">
+<h2>Installation</h2>
+<p>The most recent version of <code>xhaz</code> can be installed
+directly from the cran repository using</p>
+<pre><code>install.packages(&quot;xhaz&quot;)</code></pre>
+<p><code>xhaz</code> depends on the <code>stats</code>,
+<code>survival</code>, <code>optimParallel</code>,
+<code>numDeriv</code>, <code>statmod</code>, <code>gtools</code> and
+<code>splines</code> packages which can be installed directly from
+CRAN.</p>
+<p>It also utilizes <code>survexp.fr</code>, the R package containing
+the French life table. For example, to install <code>survexp.fr</code>
+follow the instructions available at the <a href="https://cran.r-project.org/package=survexp.fr">RStudio page on R
+and survexp.fr</a>.</p>
+<p>First, install the R package via github.</p>
+<pre><code>devtools::install_github(&quot;rstudio/survexp.fr&quot;)</code></pre>
+<p>Then, when these other packages are installed, please load the xhaz R
+package.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(xhaz)</span></code></pre></div>
+<div id="fitting-an-classical-excess-hazard-regression-model-with-a-cubic-b-splines-for-the-baseline-hazard-as-in-mexhaz" class="section level3">
+<h3>Fitting an classical excess hazard regression model with a cubic
+B-splines for the baseline hazard as in mexhaz</h3>
+<p>For this illustration, we used a simulated dataset from the original
+paper by Goungounga et al. (2023). This dataset consists of 4,978
+patients with information on their treatment arm and clinical center ID,
+as this information may affect the excess mortality rate. The US life
+table can be used to estimate the model parameters. mexhazLT() function
+will be used with argument (`<code>pophaz = classic</code>).</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;breast&quot;</span>, <span class="at">package =</span> <span class="st">&quot;xhaz&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">head</span>(breast)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;        temps statut      age     agecr       date SEX armt hosp dept</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 3   5.050550      1 30.95628 -2.213589 1985-12-23   2    0    3   09</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 8   1.415929      1 35.20680 -1.788538 1985-04-30   2    1    8   81</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 11  1.904082      1 31.80505 -2.128713 1985-10-15   2    0   11   06</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 16 15.000000      0 42.52067 -1.057150 1985-09-16   2    1   16   10</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 17  2.504911      0 32.01450 -2.107767 1985-01-29   2    0   17   94</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 18  5.319706      0 31.77941 -2.131276 1985-06-04   2    1   18   55</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">dim</span>(breast)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] 4978    9</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># The life table to be used is survexp.us. Note that SEX is coded 2 instead of female in survexp.us.</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>breast<span class="sc">$</span>sexe <span class="ot">&lt;-</span> <span class="st">&quot;female&quot;</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>fit.haz <span class="ot">&lt;-</span> <span class="fu">exphaz</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>               <span class="at">formula =</span> <span class="fu">Surv</span>(temps, statut) <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>               <span class="at">data =</span> breast, <span class="at">ratetable =</span> survexp.us, </span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>               <span class="at">only_ehazard =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>               <span class="at">rmap =</span> <span class="fu">list</span>(<span class="at">age =</span> <span class="st">&#39;age&#39;</span>, <span class="at">sex =</span> <span class="st">&#39;sexe&#39;</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>                           <span class="at">year =</span> <span class="st">&#39;date&#39;</span>))</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>breast<span class="sc">$</span>expected <span class="ot">&lt;-</span> fit.haz<span class="sc">$</span>ehazard</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>breast<span class="sc">$</span>expectedCum <span class="ot">&lt;-</span> fit.haz<span class="sc">$</span>ehazardInt</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>qknots <span class="ot">&lt;-</span> <span class="fu">quantile</span>(breast[breast<span class="sc">$</span>statut<span class="sc">==</span><span class="dv">1</span>,]<span class="sc">$</span>temps, <span class="at">probs=</span><span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span><span class="sc">/</span><span class="dv">3</span>))</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>mod.bs <span class="ot">&lt;-</span> <span class="fu">mexhazLT</span>(</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">Surv</span>(temps, statut) <span class="sc">~</span> agecr <span class="sc">+</span> armt,</span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a>  <span class="at">data =</span> breast, <span class="at">ratetable =</span> survexp.us, <span class="at">degree =</span> <span class="dv">3</span>,</span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a>  <span class="at">knots =</span> qknots, <span class="at">expected =</span> <span class="st">&quot;expected&quot;</span>, </span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>  <span class="at">expectedCum =</span> <span class="st">&quot;expectedCum&quot;</span>,</span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>  <span class="at">base =</span> <span class="st">&quot;exp.bs&quot;</span>, <span class="at">pophaz =</span> <span class="st">&quot;classic&quot;</span>)</span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a><span class="co">#&gt; iteration = 0</span></span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co">#&gt; Step:</span></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co">#&gt; [1] 0 0 0 0 0 0 0 0</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="co">#&gt; [1] -1 -1 -1 -1 -1 -1  0  0</span></span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt; [1] 11032</span></span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt; [1] -1281.60395  -490.49700  -810.60363  -112.90836    72.86473   103.05848</span></span>
+<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt; [7] -1994.09940  -415.61972</span></span>
+<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a><span class="co">#&gt; iteration = 39</span></span>
+<span id="cb7-37"><a href="#cb7-37" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb7-38"><a href="#cb7-38" tabindex="-1"></a><span class="co">#&gt; [1] -1.5083019  0.8413747  0.5236963 -0.2330524 -0.3193139 -1.1142807  0.3759031</span></span>
+<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt; [8] -0.3239171</span></span>
+<span id="cb7-40"><a href="#cb7-40" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb7-41"><a href="#cb7-41" tabindex="-1"></a><span class="co">#&gt; [1] 9784.333</span></span>
+<span id="cb7-42"><a href="#cb7-42" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb7-43"><a href="#cb7-43" tabindex="-1"></a><span class="co">#&gt; [1] -0.0003943571  0.0013787940 -0.0010131771 -0.0001036824 -0.0007712515</span></span>
+<span id="cb7-44"><a href="#cb7-44" tabindex="-1"></a><span class="co">#&gt; [6]  0.0007721412 -0.0000509317  0.0001582521</span></span>
+<span id="cb7-45"><a href="#cb7-45" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-46"><a href="#cb7-46" tabindex="-1"></a><span class="co">#&gt; Gradient relatif proche de zéro.</span></span>
+<span id="cb7-47"><a href="#cb7-47" tabindex="-1"></a><span class="co">#&gt; L&#39;itération courante est probablement la solution.</span></span>
+<span id="cb7-48"><a href="#cb7-48" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-49"><a href="#cb7-49" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-50"><a href="#cb7-50" tabindex="-1"></a><span class="co">#&gt; Data</span></span>
+<span id="cb7-51"><a href="#cb7-51" tabindex="-1"></a><span class="co">#&gt;  Name N.Obs.Tot N.Obs N.Events N.Clust</span></span>
+<span id="cb7-52"><a href="#cb7-52" tabindex="-1"></a><span class="co">#&gt;  data      4978  4978     4363       1</span></span>
+<span id="cb7-53"><a href="#cb7-53" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-54"><a href="#cb7-54" tabindex="-1"></a><span class="co">#&gt; Details</span></span>
+<span id="cb7-55"><a href="#cb7-55" tabindex="-1"></a><span class="co">#&gt;  Iter Eval   Base Nb.Leg Nb.Aghq Optim Method Code    LogLik Total.Time</span></span>
+<span id="cb7-56"><a href="#cb7-56" tabindex="-1"></a><span class="co">#&gt;    39  289 exp.bs     20      10   nlm    ---    1 -9784.333       2.13</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>                  </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>mod.bs</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; mexhazLT(formula = Surv(temps, statut) ~ agecr + armt, data = breast, </span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;     expected = &quot;expected&quot;, expectedCum = &quot;expectedCum&quot;, pophaz = &quot;classic&quot;, </span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;     base = &quot;exp.bs&quot;, degree = 3, knots = qknots, ratetable = survexp.us)</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;            Estimate    StdErr  z.value   p.value    </span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Intercept -1.508302  0.088648 -17.0145 &lt; 2.2e-16 ***</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt; BS3.1      0.841375  0.131143   6.4157 1.402e-10 ***</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; BS3.2      0.523696  0.090615   5.7793 7.499e-09 ***</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; BS3.3     -0.233052  0.188542  -1.2361    0.2164    </span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; BS3.4     -0.319314  0.255005  -1.2522    0.2105    </span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; BS3.5     -1.114281  0.248570  -4.4828 7.368e-06 ***</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; agecr      0.375903  0.013603  27.6334 &lt; 2.2e-16 ***</span></span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; armt      -0.323917  0.031372 -10.3249 &lt; 2.2e-16 ***</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; log-likelihood: -9784.3328 (for 8 degree(s) of freedom)</span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; number of observations: 4978, number of events: 4363</span></span></code></pre></div>
+</div>
+<div id="fitting-a-rescaled-excess-hazard-regression-model-with-a-cubic-b-splines-for-the-baseline-hazard-as-in-mexhaz" class="section level3">
+<h3>Fitting a rescaled excess hazard regression model with a cubic
+B-splines for the baseline hazard as in mexhaz</h3>
+<p>The new parameter to be added to mexhazLT() function is
+pophaz=“rescaled”: it allows to rescale the life table available for the
+estimation of the excess hazard parameters. This model concerns that
+proposed by Goungounga et al (2016).</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>mod.bs2 <span class="ot">&lt;-</span> <span class="fu">mexhazLT</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">Surv</span>(temps, statut) <span class="sc">~</span> agecr <span class="sc">+</span> armt,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">data =</span> breast, <span class="at">ratetable =</span> survexp.us, <span class="at">degree =</span> <span class="dv">3</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>  <span class="at">knots =</span> qknots, <span class="at">expected =</span> <span class="st">&quot;expected&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="at">expectedCum =</span> <span class="st">&quot;expectedCum&quot;</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  <span class="at">base =</span> <span class="st">&quot;exp.bs&quot;</span>, <span class="at">pophaz =</span> <span class="st">&quot;rescaled&quot;</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; iteration = 0</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; Step:</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; [1] 0 0 0 0 0 0 0 0 0</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; [1] -1 -1 -1 -1 -1 -1  0  0  0</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt; [1] 11032</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co">#&gt; [1] -1281.60395  -490.49700  -810.60363  -112.90836    72.86473   103.05848</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co">#&gt; [7] -1994.09940  -415.61972  -140.82773</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt; iteration = 51</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co">#&gt; [1] -1.5349736  0.8585781  0.5389037 -0.2782919 -0.3520908 -1.3452699  0.3591276</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt; [8] -0.3373832  0.8067923</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [1] 9783.523</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; [1] -0.0025525541 -0.0004893081 -0.0006475602 -0.0002819434 -0.0002892193</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [6] -0.0005962925 -0.0007585186 -0.0011386874 -0.0002582965</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a><span class="co">#&gt; Gradient relatif proche de zéro.</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a><span class="co">#&gt; L&#39;itération courante est probablement la solution.</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a><span class="co">#&gt; Data</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a><span class="co">#&gt;  Name N.Obs.Tot N.Obs N.Events N.Clust</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a><span class="co">#&gt;  data      4978  4978     4363       1</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="co">#&gt; Details</span></span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a><span class="co">#&gt;  Iter Eval   Base Nb.Leg Nb.Aghq Optim Method Code    LogLik Total.Time</span></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="co">#&gt;    51  401 exp.bs     20      10   nlm    ---    1 -9783.523       2.93</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>                  </span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>mod.bs2</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; mexhazLT(formula = Surv(temps, statut) ~ agecr + armt, data = breast, </span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;     expected = &quot;expected&quot;, expectedCum = &quot;expectedCum&quot;, pophaz = &quot;rescaled&quot;, </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;     base = &quot;exp.bs&quot;, degree = 3, knots = qknots, ratetable = survexp.us)</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;             Estimate    StdErr  z.value   p.value    </span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; Intercept  -1.534974  0.094208 -16.2935 &lt; 2.2e-16 ***</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; BS3.1       0.858578  0.136119   6.3076 2.835e-10 ***</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; BS3.2       0.538904  0.094530   5.7009 1.192e-08 ***</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; BS3.3      -0.278292  0.202270  -1.3758   0.16887    </span></span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; BS3.4      -0.352091  0.281798  -1.2494   0.21150    </span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; BS3.5      -1.345270  0.342630  -3.9263 8.626e-05 ***</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; agecr       0.359128  0.019167  18.7363 &lt; 2.2e-16 ***</span></span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a><span class="co">#&gt; armt       -0.337383  0.034268  -9.8455 &lt; 2.2e-16 ***</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="co">#&gt; log(Alpha)  0.806792  0.434871   1.8552   0.06356 .  </span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt; log-likelihood: -9783.523 (for 9 degree(s) of freedom)</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; number of observations: 4978, number of events: 4363</span></span></code></pre></div>
+</div>
+<div id="fitting-a-random-effects-excess-hazard-regression-model-with-a-cubic-b-splines-for-the-baseline-hazard-as-in-mexhaz" class="section level3">
+<h3>Fitting a random-effects excess hazard regression model with a cubic
+B-splines for the baseline hazard as in mexhaz</h3>
+<p>As in mexhaz, the new parameter to be added to the mexhazLT()
+function is random=“hosp”: it allows to specify the variable indicating
+the cluster levels. However, pophaz is set to be equal to “classic”.
+This excess hazard regression model is the one proposed by Charvat et al
+(2016). In the output, loglik corresponds to the total log-likelihood
+including the sum of the cumulative expected hazards, which is often
+removed in classical excess hazard regression models because it is
+considered a nuisance parameter.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>mod.bs3 <span class="ot">&lt;-</span> <span class="fu">mexhazLT</span>(</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">Surv</span>(temps, statut) <span class="sc">~</span> agecr <span class="sc">+</span> armt,</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">data =</span> breast, <span class="at">ratetable =</span> survexp.us, <span class="at">degree =</span> <span class="dv">3</span>,</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">knots =</span> qknots, <span class="at">expected =</span> <span class="st">&quot;expected&quot;</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">expectedCum =</span> <span class="st">&quot;expectedCum&quot;</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">base =</span> <span class="st">&quot;exp.bs&quot;</span>, <span class="at">pophaz =</span> <span class="st">&quot;classic&quot;</span>, <span class="at">random =</span> <span class="st">&quot;hosp&quot;</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; iteration = 0</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; Step:</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; [1] 0 0 0 0 0 0 0 0 0</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; [1] -1.0 -1.0 -1.0 -1.0 -1.0 -1.0  0.0  0.0  0.1</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; [1] 10129.43</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; [1]   -39.69633  -148.95592  -395.16138    18.72774   118.58665   119.00834</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt; [7] -2896.28313   329.60901    39.47875</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt; iteration = 53</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt; [1] -1.90783127  1.00354112  1.11855695  0.90280950  0.65681302  0.05890742</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt; [7]  0.49124655 -0.45036907 -0.20709299</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt; [1] 8998.729</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co">#&gt; [1]  0.0026219409  0.0022965273  0.0006163271  0.0006457412 -0.0012478267</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a><span class="co">#&gt; [6]  0.0002801244 -0.0007330527 -0.0002019078  0.0019390427</span></span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a><span class="co">#&gt; Gradient relatif proche de zéro.</span></span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a><span class="co">#&gt; L&#39;itération courante est probablement la solution.</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a><span class="co">#&gt; Computation of the covariance matrix of the shrinkage estimators</span></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a><span class="co">#&gt; Data</span></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="co">#&gt;  Name N.Obs.Tot N.Obs N.Events N.Clust</span></span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a><span class="co">#&gt;  data      4978  4978     4363     100</span></span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a><span class="co">#&gt; Details</span></span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a><span class="co">#&gt;  Iter Eval   Base Nb.Leg Nb.Aghq Optim Method Code    LogLik Total.Time</span></span>
+<span id="cb11-40"><a href="#cb11-40" tabindex="-1"></a><span class="co">#&gt;    53  422 exp.bs     20      10   nlm    ---    1 -8998.729      17.36</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>                  </span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>mod.bs3</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; mexhazLT(formula = Surv(temps, statut) ~ agecr + armt, data = breast, </span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt;     expected = &quot;expected&quot;, expectedCum = &quot;expectedCum&quot;, pophaz = &quot;classic&quot;, </span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt;     base = &quot;exp.bs&quot;, degree = 3, knots = qknots, random = &quot;hosp&quot;, </span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;     ratetable = survexp.us)</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;                 Estimate    StdErr  z.value   p.value    </span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; Intercept      -1.907831  0.122002 -15.6376 &lt; 2.2e-16 ***</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; BS3.1           1.003541  0.131641   7.6233 2.465e-14 ***</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; BS3.2           1.118557  0.093232  11.9976 &lt; 2.2e-16 ***</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; BS3.3           0.902810  0.192646   4.6864 2.781e-06 ***</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; BS3.4           0.656813  0.257079   2.5549  0.010622 *  </span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; BS3.5           0.058907  0.251562   0.2342  0.814855    </span></span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a><span class="co">#&gt; agecr           0.491247  0.014198  34.5990 &lt; 2.2e-16 ***</span></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a><span class="co">#&gt; armt           -0.450369  0.032262 -13.9596 &lt; 2.2e-16 ***</span></span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a><span class="co">#&gt; hosp [log(sd)] -0.207093  0.074504  -2.7796  0.005442 ** </span></span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a><span class="co">#&gt; log-likelihood: -8998.7292 (for 9 degree(s) of freedom)</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a><span class="co">#&gt; number of observations: 4978, number of events: 4363</span></span></code></pre></div>
+</div>
+<div id="fitting-a-rescaled-random-effects-excess-hazard-regression-model-with-a-cubic-b-splines-for-the-baseline-hazard-as-in-mexhaz" class="section level3">
+<h3>Fitting a rescaled random-effects excess hazard regression model
+with a cubic B-splines for the baseline hazard as in mexhaz</h3>
+<p>As in mexhaz, the new parameter to be added to the mexhazLT()
+function is random=“hosp”: it allows to specify the variable indicating
+the cluster levels. However, pophaz is set to be equal to “rescaled”
+(`<code>pophaz = &quot;rescaled&quot;</code>). This excess hazard regression model
+is the one proposed by Goungounga et al (2023).</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a></span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>mod.bs4 <span class="ot">&lt;-</span> <span class="fu">mexhazLT</span>(</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">formula =</span> <span class="fu">Surv</span>(temps, statut) <span class="sc">~</span> agecr <span class="sc">+</span> armt,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">data =</span> breast, <span class="at">ratetable =</span> survexp.us, <span class="at">degree =</span> <span class="dv">3</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">knots =</span> qknots, <span class="at">expected =</span> <span class="st">&quot;expected&quot;</span>, </span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">expectedCum =</span> <span class="st">&quot;expectedCum&quot;</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">base =</span> <span class="st">&quot;exp.bs&quot;</span>, <span class="at">pophaz =</span> <span class="st">&quot;rescaled&quot;</span>, <span class="at">random =</span> <span class="st">&quot;hosp&quot;</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; iteration = 0</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; Step:</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt;  [1] 0 0 0 0 0 0 0 0 0 0</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a><span class="co">#&gt;  [1] -1.0 -1.0 -1.0 -1.0 -1.0 -1.0  0.0  0.0  0.0  0.1</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="co">#&gt; [1] 10129.43</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt;  [1]   -39.69633  -148.95592  -395.16138    18.72774   118.58665   119.00834</span></span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a><span class="co">#&gt;  [7] -2896.28313   329.60901   -83.32170    39.47875</span></span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a><span class="co">#&gt; iteration = 63</span></span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a><span class="co">#&gt; Parameter:</span></span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a><span class="co">#&gt;  [1] -1.9735698  1.0336144  1.1548583  0.8953165  0.6287633 -0.1876885</span></span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a><span class="co">#&gt;  [7]  0.4726014 -0.4743774  1.0226142 -0.1557342</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a><span class="co">#&gt; Function Value</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a><span class="co">#&gt; [1] 8995.933</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a><span class="co">#&gt; Gradient:</span></span>
+<span id="cb13-26"><a href="#cb13-26" tabindex="-1"></a><span class="co">#&gt;  [1]  3.686699e-06  1.091097e-04  5.260753e-04  3.165042e-04 -5.493348e-04</span></span>
+<span id="cb13-27"><a href="#cb13-27" tabindex="-1"></a><span class="co">#&gt;  [6]  2.619345e-04  1.091394e-04 -7.566996e-04 -4.126733e-04 -7.275958e-05</span></span>
+<span id="cb13-28"><a href="#cb13-28" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-29"><a href="#cb13-29" tabindex="-1"></a><span class="co">#&gt; Gradient relatif proche de zéro.</span></span>
+<span id="cb13-30"><a href="#cb13-30" tabindex="-1"></a><span class="co">#&gt; L&#39;itération courante est probablement la solution.</span></span>
+<span id="cb13-31"><a href="#cb13-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-32"><a href="#cb13-32" tabindex="-1"></a><span class="co">#&gt; Computation of the covariance matrix of the shrinkage estimators</span></span>
+<span id="cb13-33"><a href="#cb13-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-34"><a href="#cb13-34" tabindex="-1"></a><span class="co">#&gt; Data</span></span>
+<span id="cb13-35"><a href="#cb13-35" tabindex="-1"></a><span class="co">#&gt;  Name N.Obs.Tot N.Obs N.Events N.Clust</span></span>
+<span id="cb13-36"><a href="#cb13-36" tabindex="-1"></a><span class="co">#&gt;  data      4978  4978     4363     100</span></span>
+<span id="cb13-37"><a href="#cb13-37" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-38"><a href="#cb13-38" tabindex="-1"></a><span class="co">#&gt; Details</span></span>
+<span id="cb13-39"><a href="#cb13-39" tabindex="-1"></a><span class="co">#&gt;  Iter Eval   Base Nb.Leg Nb.Aghq Optim Method Code    LogLik Total.Time</span></span>
+<span id="cb13-40"><a href="#cb13-40" tabindex="-1"></a><span class="co">#&gt;    63  553 exp.bs     20      10   nlm    ---    1 -8995.933      22.91</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>                  </span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>mod.bs4</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; mexhazLT(formula = Surv(temps, statut) ~ agecr + armt, data = breast, </span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt;     expected = &quot;expected&quot;, expectedCum = &quot;expectedCum&quot;, pophaz = &quot;rescaled&quot;, </span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt;     base = &quot;exp.bs&quot;, degree = 3, knots = qknots, random = &quot;hosp&quot;, </span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt;     ratetable = survexp.us)</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt;                 Estimate    StdErr  z.value   p.value    </span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a><span class="co">#&gt; Intercept      -1.973570  0.131548 -15.0027 &lt; 2.2e-16 ***</span></span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a><span class="co">#&gt; BS3.1           1.033614  0.138130   7.4829 7.261e-14 ***</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a><span class="co">#&gt; BS3.2           1.154858  0.098864  11.6813 &lt; 2.2e-16 ***</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a><span class="co">#&gt; BS3.3           0.895317  0.207525   4.3143 1.601e-05 ***</span></span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a><span class="co">#&gt; BS3.4           0.628763  0.291275   2.1587 0.0308767 *  </span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a><span class="co">#&gt; BS3.5          -0.187689  0.317852  -0.5905 0.5548619    </span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a><span class="co">#&gt; agecr           0.472601  0.016678  28.3364 &lt; 2.2e-16 ***</span></span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a><span class="co">#&gt; armt           -0.474377  0.035524 -13.3537 &lt; 2.2e-16 ***</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a><span class="co">#&gt; log(Alpha)      1.022614  0.273560   3.7382 0.0001854 ***</span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a><span class="co">#&gt; hosp [log(sd)] -0.155734  0.078446  -1.9853 0.0471164 *  </span></span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a><span class="co">#&gt; log-likelihood: -8995.9329 (for 10 degree(s) of freedom)</span></span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-26"><a href="#cb14-26" tabindex="-1"></a><span class="co">#&gt; number of observations: 4978, number of events: 4363</span></span></code></pre></div>
+<p>We can compare the output of these two models using AIC or BIC
+criteria.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a>compared_models <span class="ot">&lt;-</span> <span class="fu">list</span>(mod.bs,mod.bs2, mod.bs3, mod.bs4)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">names</span>(compared_models) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;mod.bs&quot;</span>,<span class="st">&quot;mod.bs2&quot;</span>, <span class="st">&quot;mod.bs3&quot;</span>, <span class="st">&quot;mod.bs4&quot;</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="fu">sapply</span>(compared_models, <span class="cf">function</span>(i) {</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="fu">AIC</span>(i)</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>})</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt;   mod.bs  mod.bs2  mod.bs3  mod.bs4 </span></span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; 19584.67 19585.05 18015.46 18011.87</span></span></code></pre></div>
+<p>A statistical comparison between two nested models can be performed
+with a likelihood ratio test calculated by function anova method
+implemented in xhaz.</p>
+<p>For example, suppose we want to test whether we can drop the
+rescaling parameter between the different excess hazard regression
+models.</p>
+<p>As in survival package, we compare the models using anova(),
+i.e.,</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">anova</span>(mod.bs,mod.bs2)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt; Assumption: Model 1 nested within Model 2</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; Likelihood ratio test</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; Model 1: </span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; Surv(temps, statut) ~ agecr + armt</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; Model 2: </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; Surv(temps, statut) ~ agecr + armt</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt;      Model.df  loglik      df Chisq Pr(&gt;Chisq)</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; [1,]      8.0 -9784.3      NA    NA         NA</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; [2,]      9.0 -9783.5     1.0  0.81     0.2031</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">anova</span>(mod.bs3,mod.bs4)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; Assumption: Model 1 nested within Model 2</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt; Likelihood ratio test</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt; Model 1: </span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; Surv(temps, statut) ~ agecr + armt</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; Model 2: </span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt; Surv(temps, statut) ~ agecr + armt</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt;      Model.df  loglik      df Chisq Pr(&gt;Chisq)  </span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; [1,]      9.0 -8998.7      NA    NA         NA  </span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a><span class="co">#&gt; [2,]     10.0 -8995.9     1.0 2.796    0.01804 *</span></span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span></code></pre></div>
+<p>Note that it is the user’s responsibility to provide properly nested
+hazard models for the LRT to be valid. The results suggest that by
+correcting for between-cluster heterogeneity and non-comparability bias
+with a rescaled random effects excess hazard regression model, the user
+will be able to provide more accurate estimates of net survival.</p>
+</div>
+<div id="plot-of-net-survival-and-excess-hazard-for-different-models" class="section level3">
+<h3>Plot of net survival and excess hazard for different models</h3>
+<p>One could be interested in the prediction of net survival and excess
+hazard for the individual with the same characteristics as individual 1
+in the breast dataset (age 30.95, armt equals 0) as performed in
+mexhaz.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>predict_mod <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod.bs,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>                        <span class="at">time.pts=</span><span class="fu">seq</span>(<span class="fl">0.1</span>,<span class="dv">10</span>,<span class="at">by=</span><span class="fl">0.1</span>),</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>                        <span class="at">data.val=</span><span class="fu">data.frame</span>(<span class="at">agecr =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>agecr,</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>                                            <span class="at">armt =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>armt))</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>predict_mod2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod.bs2,</span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>                        <span class="at">time.pts=</span><span class="fu">seq</span>(<span class="fl">0.1</span>,<span class="dv">10</span>,<span class="at">by=</span><span class="fl">0.1</span>),</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>                        <span class="at">data.val=</span><span class="fu">data.frame</span>(<span class="at">agecr =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>agecr,</span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>                                            <span class="at">armt =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>armt))</span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>predict_mod3 <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod.bs3,</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>                        <span class="at">time.pts=</span><span class="fu">seq</span>(<span class="fl">0.1</span>,<span class="dv">10</span>,<span class="at">by=</span><span class="fl">0.1</span>),</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>                        <span class="at">data.val=</span><span class="fu">data.frame</span>(<span class="at">agecr =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>agecr,</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>                                            <span class="at">armt =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>armt, </span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>                                            <span class="at">hosp =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>hosp))</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a></span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>predict_mod4 <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod.bs4,</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>                        <span class="at">time.pts=</span><span class="fu">seq</span>(<span class="fl">0.1</span>,<span class="dv">10</span>,<span class="at">by=</span><span class="fl">0.1</span>),</span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>                        <span class="at">data.val=</span><span class="fu">data.frame</span>(<span class="at">agecr =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>agecr,</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a>                                            <span class="at">armt =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>armt,</span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a>                                            <span class="at">hosp =</span> breast[<span class="dv">1</span>,]<span class="sc">$</span>hosp))</span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a></span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a>old.par <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">no.readonly =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a></span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>))</span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a></span>
+<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a><span class="fu">plot</span>(predict_mod<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod<span class="sc">$</span>results<span class="sc">$</span>hazard,</span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">xlab =</span> <span class="st">&#39;Time (years)&#39;</span>,</span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;excess hazard&quot;</span>)</span>
+<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a><span class="fu">lines</span>(predict_mod2<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod2<span class="sc">$</span>results<span class="sc">$</span>hazard,</span>
+<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a><span class="fu">lines</span>(predict_mod3<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod3<span class="sc">$</span>results<span class="sc">$</span>hazard, </span>
+<span id="cb18-35"><a href="#cb18-35" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>)</span>
+<span id="cb18-36"><a href="#cb18-36" tabindex="-1"></a><span class="fu">lines</span>(predict_mod4<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod4<span class="sc">$</span>results<span class="sc">$</span>hazard,</span>
+<span id="cb18-37"><a href="#cb18-37" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb18-38"><a href="#cb18-38" tabindex="-1"></a></span>
+<span id="cb18-39"><a href="#cb18-39" tabindex="-1"></a></span>
+<span id="cb18-40"><a href="#cb18-40" tabindex="-1"></a><span class="fu">plot</span>(predict_mod<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod<span class="sc">$</span>results<span class="sc">$</span>surv,</span>
+<span id="cb18-41"><a href="#cb18-41" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">xlab =</span> <span class="st">&#39;Time (years)&#39;</span>,</span>
+<span id="cb18-42"><a href="#cb18-42" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;Net survival&quot;</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>))</span>
+<span id="cb18-43"><a href="#cb18-43" tabindex="-1"></a><span class="fu">lines</span>(predict_mod2<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod2<span class="sc">$</span>results<span class="sc">$</span>surv,</span>
+<span id="cb18-44"><a href="#cb18-44" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb18-45"><a href="#cb18-45" tabindex="-1"></a><span class="fu">lines</span>(predict_mod3<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod3<span class="sc">$</span>results<span class="sc">$</span>surv,</span>
+<span id="cb18-46"><a href="#cb18-46" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>)</span>
+<span id="cb18-47"><a href="#cb18-47" tabindex="-1"></a><span class="fu">lines</span>(predict_mod4<span class="sc">$</span>results<span class="sc">$</span>time.pts, predict_mod4<span class="sc">$</span>results<span class="sc">$</span>surv,</span>
+<span id="cb18-48"><a href="#cb18-48" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;l&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>,<span class="at">lty =</span> <span class="dv">2</span>)</span>
+<span id="cb18-49"><a href="#cb18-49" tabindex="-1"></a></span>
+<span id="cb18-50"><a href="#cb18-50" tabindex="-1"></a><span class="fu">legend</span>(</span>
+<span id="cb18-51"><a href="#cb18-51" tabindex="-1"></a>  <span class="st">&quot;topright&quot;</span>,</span>
+<span id="cb18-52"><a href="#cb18-52" tabindex="-1"></a>  <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">&quot;mod.bs&quot;</span>,</span>
+<span id="cb18-53"><a href="#cb18-53" tabindex="-1"></a>             <span class="st">&quot;mod.bs2&quot;</span>,</span>
+<span id="cb18-54"><a href="#cb18-54" tabindex="-1"></a>             <span class="st">&quot;mod.bs3&quot;</span>,</span>
+<span id="cb18-55"><a href="#cb18-55" tabindex="-1"></a>             <span class="st">&quot;mod.bs4&quot;</span>),</span>
+<span id="cb18-56"><a href="#cb18-56" tabindex="-1"></a>  <span class="at">lty =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span> , <span class="dv">1</span>, <span class="dv">2</span>),</span>
+<span id="cb18-57"><a href="#cb18-57" tabindex="-1"></a>  <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">2</span> , <span class="dv">2</span>, <span class="dv">2</span>),</span>
+<span id="cb18-58"><a href="#cb18-58" tabindex="-1"></a>  <span class="at">col =</span> <span class="fu">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;blue&quot;</span>, <span class="st">&quot;red&quot;</span>, <span class="st">&quot;green&quot;</span>)</span>
+<span id="cb18-59"><a href="#cb18-59" tabindex="-1"></a>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="fu">par</span>(old.par)</span></code></pre></div>
+</div>
+</div>
+<div id="license" class="section level2">
+<h2>License</h2>
+<p>GPL 3.0, for academic use.</p>
+</div>
+<div id="acknowledgments" class="section level2">
+<h2>Acknowledgments</h2>
+<p>We are grateful to the members of the CENSUR Survival Group for their
+helpful comments.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

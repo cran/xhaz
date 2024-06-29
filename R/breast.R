@@ -1,0 +1,39 @@
+#' Simulated clinical trial data with non comparability bias in term of individuals expected hazard
+#'
+#' Simulated data
+#'
+#'
+#' @docType data
+#'
+#' @usage data(breast)
+#'
+#' @format This dataset contains the following variables:
+#' \describe{
+#'  \item{temps}{Follow-up time (years)}
+#'  \item{statut}{Vital status}
+#'  \item{age}{Age at diagnosis}
+#'  \item{agecr}{Centered and scaled age}
+#'  \item{date}{date of diagnosis.}
+#'  \item{SEX}{2 for female}
+#'  \item{armt}{2 arms of treatment (0,1)}
+#'  \item{hosp}{clinical centers}
+#'  \item{dept}{department of residence}
+#' }
+#'
+#'
+#' @keywords datasets
+#'
+#' @references  Goungounga, JA, Graff\'eo N, Charvat H, Giorgi R. “Correcting for
+#'  heterogeneity and non-comparability bias in multicenter clinical trials
+#'  with a rescaled random-effect excess hazard model.” Biometrical journal.
+#'  Biometrische Zeitschrift vol. 65,4 (2023): e2100210.
+#'  doi:10.1002/bimj.202100210.PMID: 36890623;
+#'  (\href{https://pubmed.ncbi.nlm.nih.gov/36890623/}{PubMed})
+#'
+#'
+#'
+#'
+#' @examples
+#' data(breast)
+#' summary(breast)
+"breast"

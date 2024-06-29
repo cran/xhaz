@@ -7,9 +7,6 @@ tosplit <- function(formula = formula,
   Call <- match.call()
   m <- match.call(expand.dots = FALSE)
 
-  # indx <- match(c("formula", "data", "subset", "na.action"),
-  #               names(Call), nomatch = 0)
-
   indx <- match(c("formula", "data", "na.action"),
                 names(Call), nomatch = 0)
 
@@ -80,7 +77,7 @@ tosplit <- function(formula = formula,
 
   data2$time_2 <- data2$time_old <- data2$time <- time
 
-  data2$tageDC <- data2$ageDC <- data2$age + data2$time
+  data2$tageDC <- data2$ageDC <- data2$ageDiag + data2$time
 
 
 

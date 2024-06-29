@@ -1,4 +1,5 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
+options(rmarkdown.html_vignette.check_title = FALSE)
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -16,14 +17,13 @@ data("simuData", package = "xhaz")
 head(simuData)
 dim(simuData)
 
-levels(simuData$sex) <- c("male", "female")
 interval <- c(0, 0.718, 1.351, 2.143, 3.601, 6)
 fit.estv1 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
                   data = simuData,
                   ratetable = survexp.us,
                   interval = interval,
                   rmap = list(age = 'age', sex = 'sex', year = 'date'),
-                  baseline = c("constant"),
+                  baseline = "constant",
                   pophaz = "classic")
                   
 fit.estv1
@@ -40,7 +40,7 @@ fit.corrected1 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
 fit.corrected1
 
 ## -----------------------------------------------------------------------------
- # An additionnal cavariate (here race) missing in the life table is
+ # An additionnal cavariate (here race) missing in the life tables is
  # considered by the model with a breakpoint at 75 years
 
  fit.corrected2 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
@@ -66,7 +66,7 @@ BIC(fit.corrected1)
 ## -----------------------------------------------------------------------------
 anova(fit.corrected1, fit.corrected2)
 
-## ---- fig.width=10, fig.height=10---------------------------------------------
+## ----fig.width=10, fig.height=10----------------------------------------------
 
 #only add Surv variables (time_year and status) to have them in the new.data. 
 #They are not used for the prediction
@@ -188,7 +188,7 @@ legend(
 par(old.par)
 
 
-## ---- fig.width=10, fig.height=10---------------------------------------------
+## ----fig.width=10, fig.height=10----------------------------------------------
 
 #only add Surv variables (time_year and status) to have them in the new.data. 
 #They are not used for the prediction

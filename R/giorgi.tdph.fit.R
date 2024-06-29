@@ -3,16 +3,16 @@
 giorgi.tdph.fit <- function(x, y, ehazard, ehazardInt, int, covtest, bsplines,
                             init, control, event, Terms, strats, add.rmap,
                             add.rmap.cut, ageDiag, ageDC, optim, trace, speedy,
-                            nghq = nghq) {
+                            nghq = nghq, pophaz = pophaz, method = method) {
   k <- 3
   nrowx <- nrow(x)
   ehazard <- c(ehazard)
   event <- c(event)
-  y[, 1] <- c(y[, 1])# / 12)
+  y[, 1] <- c(y[, 1])
   cst <- 1
   cpti <- 1
   cptj <- 1
-  int <- int# / 12
+  int <- int
   alpha <- NULL
   #Coefficients for the basis functions
   int23 <- int[2] * int[3]
@@ -381,7 +381,9 @@ IntGL <- function(f, bound, cst, cpti, cptj, theta, x, nTD, p, nghq = nghq) {
                                       add.rmap,
                                       trace,
                                       speedy,
-                                      nghq = nghq)
+                                      nghq = nghq,
+                                      pophaz = pophaz,
+                                      method = method)
     }
   else{
     Fmodel <- giorgi.tdph.maxim(x,
@@ -405,7 +407,9 @@ IntGL <- function(f, bound, cst, cpti, cptj, theta, x, nTD, p, nghq = nghq) {
                                 Int.FDbase,
                                 Int.SDbase,
                                 int,
-                                control, nghq = nghq)
+                                control, nghq = nghq,
+                                pophaz = pophaz, add.rmap,
+                                add.rmap.cut)
   }
   #Tested model: if the likelihood ratio test of PH is required
   if (sum(covtest) > 0) {
@@ -499,7 +503,9 @@ IntGL <- function(f, bound, cst, cpti, cptj, theta, x, nTD, p, nghq = nghq) {
                                         add.rmap,
                                         trace,
                                         speedy,
-                                        nghq = nghq)
+                                        nghq = nghq,
+                                        pophaz = pophaz,
+                                        method = method)
     }
     else{
       Tmodel <- giorgi.tdph.maxim(x,
@@ -524,7 +530,9 @@ IntGL <- function(f, bound, cst, cpti, cptj, theta, x, nTD, p, nghq = nghq) {
                                   Int.FDbase,
                                   Int.SDbase,
                                   int,
-                                  control)
+                                  control,
+                                  pophaz = pophaz, add.rmap,
+                                  add.rmap.cut)
       }
 
     list(

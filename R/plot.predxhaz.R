@@ -17,28 +17,28 @@
 #'  survival, or time-dependent effects, when times.pts argument is provided
 #'  in prediction call.
 #'
-#' @author Juste Goungounga, Robert Darlin Mba, Nathalie Grafféo and Roch Giorgi
+#' @author Juste Goungounga, Robert Darlin Mba, Nathalie Graff\'eo and Roch Giorgi
 #'
 #' @importFrom graphics plot lines grid legend
 #'
 #' @export
 #'
 #'
-#' @references Goungounga JA, Touraine C, Grafféo N, Giorgi R;
+#' @references Goungounga JA, Touraine C, Graff\'eo N, Giorgi R;
 #' CENSUR working survival group. Correcting for misclassification
 #' and selection effects in estimating net survival in clinical trials.
 #'  BMC Med Res Methodol. 2019 May 16;19(1):104.
 #'   doi: 10.1186/s12874-019-0747-3. PMID: 31096911; PMCID: PMC6524224.
 #' (\href{https://pubmed.ncbi.nlm.nih.gov/31096911/}{PubMed})
 #'
-#' Touraine C, Grafféo N, Giorgi R; CENSUR working survival group.
+#' Touraine C, Graff\'eo N, Giorgi R; CENSUR working survival group.
 #' More accurate cancer-related excess mortality through correcting
 #' background mortality for extra variables.
 #'  Stat Methods Med Res. 2020 Jan;29(1):122-136.
 #'  doi: 10.1177/0962280218823234. Epub 2019 Jan 23. PMID: 30674229.
 #'  (\href{https://pubmed.ncbi.nlm.nih.gov/30674229/}{PubMed})
 #'
-#'  Mba RD, Goungounga JA, Grafféo N, Giorgi R; CENSUR working survival group.
+#'  Mba RD, Goungounga JA, Graff\'eo N, Giorgi R; CENSUR working survival group.
 #'   Correcting inaccurate background mortality in excess hazard models
 #'   through breakpoints. BMC Med Res Methodol. 2020 Oct 29;20(1):268.
 #'   doi: 10.1186/s12874-020-01139-z. PMID: 33121436; PMCID: PMC7596976.
@@ -54,7 +54,6 @@
 #' data("simuData", package = "xhaz") # load the data sets 'simuData'
 #'
 #' #define the levels of variable sex
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' # Esteve et al. model
 #'
@@ -104,7 +103,7 @@
 #' }
 
 plot.predxhaz <- function(x, what = "survival", ...){
-  if (any(class(x) == "predxhaz")) {
+   if (any(class(x) == "predxhaz")) {
     time <- sapply(1:length(x), function(i)unique(x[[i]]$times.pts))
     if (what == "survival") {
       survival <- sapply(1:length(x), function(i) mean(x[[i]]$survival))

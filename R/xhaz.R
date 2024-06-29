@@ -107,6 +107,8 @@
 #'
 #' @param nghq number of nodes and weights for Gaussian quadrature
 #'
+#' @param method corresponds to \code{optim} function argument.
+#'
 #' @param ... other parameters used with the \code{xhaz} function
 #'
 #'
@@ -124,7 +126,7 @@
 #' @keywords xhaz
 #'
 #'
-#' @return An object of class \code{xhaz.constant} or \code{xhaz.bsplines},
+#' @return An object of class \code{constant} or \code{bsplines},
 #' according to the type of functions chosen to fit the baseline hazard of
 #' model (see details for argument \code{baseline}). This object is a list containing
 #' the following components:
@@ -185,19 +187,19 @@
 #'
 #' @author Juste Goungounga, Darlin Robert Mba, Nathalie Graffeo, Roch Giorgi
 #'
-#' @references Goungounga JA, Touraine C, Grafféo N, Giorgi R; CENSUR working
+#' @references Goungounga JA, Touraine C, Graff\'eo N, Giorgi R; CENSUR working
 #'  survival group. Correcting for misclassification and selection effects in
 #'  estimating net survival in clinical trials. BMC Med Res Methodol. 2019 May
 #'  16;19(1):104. doi: 10.1186/s12874-019-0747-3. PMID: 31096911; PMCID:
 #'  PMC6524224. (\href{https://pubmed.ncbi.nlm.nih.gov/31096911/}{PubMed})
 #'
-#'  Touraine C, Grafféo N, Giorgi R; CENSUR working survival group. More
+#'  Touraine C, Graff\'eo N, Giorgi R; CENSUR working survival group. More
 #'  accurate cancer-related excess mortality through correcting background
 #'  mortality for extra variables. Stat Methods Med Res. 2020 Jan;29(1):122-136.
 #'  doi: 10.1177/0962280218823234. Epub 2019 Jan 23. PMID: 30674229.
 #'  (\href{https://pubmed.ncbi.nlm.nih.gov/30674229/}{PubMed})
 #'
-#'  Mba RD, Goungounga JA, Grafféo N, Giorgi R; CENSUR working survival group.
+#'  Mba RD, Goungounga JA, Graff\'eo N, Giorgi R; CENSUR working survival group.
 #'  Correcting inaccurate background mortality in excess hazard models through
 #'  breakpoints. BMC Med Res Methodol. 2020 Oct 29;20(1):268. doi:
 #'  10.1186/s12874-020-01139-z. PMID: 33121436; PMCID: PMC7596976.
@@ -222,7 +224,6 @@
 #'#                      linear and proportional effects for the covariates on
 #'#                      baseline excess hazard.
 #'
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' fit.estv1 <- xhaz(formula = Surv(time_year, status) ~ agec + race,
 #'                   data = simuData,
@@ -371,6 +372,7 @@ xhaz <- function(formula = formula(data),
                  trace = 0,
                  speedy = FALSE,
                  nghq = 12,
+                 method = "L-BFGS-B",
                  ...) {
 
   m_int <- match.call(expand.dots = FALSE)
@@ -410,6 +412,7 @@ xhaz <- function(formula = formula(data),
       nghq,
       m_int,
       rcall,
+      method,
       ...
     )
   } else if ((
@@ -448,6 +451,7 @@ xhaz <- function(formula = formula(data),
       nghq = nghq,
       m_int = m_int,
       rcall = rcall,
+      method = method,
       ...
     )
 
@@ -484,6 +488,7 @@ xhaz <- function(formula = formula(data),
       nghq = nghq,
       m_int = m_int,
       rcall = rcall,
+      method = method,
       ...
     )
   }

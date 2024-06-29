@@ -21,6 +21,7 @@ without_breakpoint_without_cut <- function(formula = formula,
                                            nghq = nghq,
                                            m_int = m_int,
                                            rcall = rcall,
+                                           method = method,
                                            ...) {
   time_elapsed0 <- as.numeric(base::proc.time()[3])
 
@@ -61,6 +62,10 @@ without_breakpoint_without_cut <- function(formula = formula,
   }
 
   ehazardInt <- NULL
+
+if(!is.null(pophaz)) {
+  pophaz <- match.arg(pophaz, c("classic", "rescaled", "corrected"))
+}
   # controls on data & ratetable parameters
   if (missing(ratedata) & missing(ratetable)) {
     stop("Missing rate table from general population.")
@@ -68,16 +73,16 @@ without_breakpoint_without_cut <- function(formula = formula,
   if (missing(data)) {
     stop("Missing data data frame in which to interpret
            the variables named in the formula.")
-  } else{
+  } else if (!missing(ratetable)){
     if (is.na(match(rmap$age, names(data))))
       stop("Must have informations for age on the data set.")
     if (is.na(match(rmap$sex, names(data))))
       stop("Must have informations for sex on the data set.")
-    if (is.na(match(rmap$year, names(data))))
+    if (is.na(match(rmap$year, names(data)))) {
       stop("Must have informations for date on the data set.")
-  }
+    }
 
-  if (!missing(ratetable)) {
+
     if (is.ratetable(ratetable)) {
       varlist <- attr(ratetable, "dimid")
       if (is.null(varlist)) {
@@ -92,12 +97,13 @@ without_breakpoint_without_cut <- function(formula = formula,
     }
 
 
-
     varsexID <- try(which(varlist == 'sex'))
     conditionVsex <- attr(ratetable, which = "dimnames")[[varsexID]]
-    if (any(!conditionVsex %in% c('male', 'female'))) {
-      conditionVsex <-
-        c('male', 'female')[c(which(conditionVsex %in% c('male', 'female')))]
+    condsexdata <- unique(data[,rmap$sex])
+    if (any(conditionVsex %in% condsexdata)) {
+      conditionVsex <- condsexdata
+    }else{
+      stop("Please check the matching between the levels of sex \nin the data.frame and in the ratetable used.")
     }
 
 
@@ -129,32 +135,38 @@ without_breakpoint_without_cut <- function(formula = formula,
     if (any(is.na(temp01)))
       stop("Variable not found in the ratetable:",
            (names(rcall))[is.na(temp01)])
-
-
     temp02 <- match(as.vector(unlist(rmap)), names(data))
     if (any(is.na(temp02))) {
       stop("Variable not found in the data set:",
-           (names(rcall))[is.na(temp02)])
+           rmap[[which(is.na(temp02))]])
     }
 
-  }
+  }else if(missing(ratetable)) {
+    if (is.null(pophaz)) {
+      ehazardInt <- rep(0, nrow(data))
+      ehazard <- rep(0, nrow(data))
+    } else {
+      stop("Check if you yant to fit an excess hazard model or overal hazard model!\n")
+    }
+    }
 
 
+if(!is.null(pophaz)) {
   if (pophaz == "corrected") {
     if (is.null(add.rmap.cut$breakpoint)) {
       stop("Missing breakpoint information")
     } else {
       if (add.rmap.cut$breakpoint == TRUE) {
         if (!is.na(add.rmap.cut$cut[1])) {
-          if (min(add.rmap.cut$cut) < min(c(data$age, data$age + data$time))) {
-            if (max(add.rmap.cut$cut) <= max(c(data$age, data$age + data$time))) {
+          if (min(add.rmap.cut$cut) < min(c(data[, rmap$age], data[, rmap$age] + data$time))) {
+            if (max(add.rmap.cut$cut) <= max(c(data[, rmap$age], data[, rmap$age] + data$time))) {
               stop("Breakpoint(s) is (are) smaller than the minimum age")
             } else
               stop(
                 "Breakpoint(s) is (are) smaller than the minimum age and breakpoint(s) greater than the maximum age"
               )
           } else{
-            if (max(add.rmap.cut$cut) > max(c(data$age, data$age + data$time)))
+            if (max(add.rmap.cut$cut) > max(c(data[, rmap$age], data[, rmap$age] + data$time)))
               stop("Breakpoint(s) is (are) greater than the maximum age")
           }
 
@@ -164,6 +176,7 @@ without_breakpoint_without_cut <- function(formula = formula,
     }
   }
 
+}
 
 
   if (control$iter.max < 0)
@@ -285,8 +298,9 @@ without_breakpoint_without_cut <- function(formula = formula,
   }
 
 
-  pophaz <- match.arg(pophaz, c("classic", "rescaled", "corrected"))
+  # pophaz <- match.arg(pophaz, c("classic", "rescaled", "corrected"))
 
+if (!is.null(pophaz)) {
   if (pophaz == "corrected") {
     if (!is.null(add.rmap)) {
       add.rmap.var <- add.rmap
@@ -317,11 +331,9 @@ without_breakpoint_without_cut <- function(formula = formula,
 
   #
   condition0 <- add.rmap.cut$breakpoint == FALSE
-  condition1 <-
-    add.rmap.cut$breakpoint == TRUE &
+  condition1 <- add.rmap.cut$breakpoint == TRUE &
     !is.na(add.rmap.cut$cut[1]) & is.null(add.rmap.cut$probs)
-  condition2 <-
-    add.rmap.cut$breakpoint == TRUE &
+  condition2 <- add.rmap.cut$breakpoint == TRUE &
     is.na(add.rmap.cut$cut[1]) & !is.null(add.rmap.cut$probs)
   if (!is.null(data$break_interval)) {
     if (missing(ratetable)) {
@@ -397,6 +409,13 @@ without_breakpoint_without_cut <- function(formula = formula,
 
 
 
+}
+
+
+
+
+
+
   if (sum(is.na(interval)) > 0) {
     n.cut <- sum(is.na(interval))
     q.values <- cumsum(rep(1 / (n.cut + 1), n.cut))
@@ -426,12 +445,12 @@ without_breakpoint_without_cut <- function(formula = formula,
 
 
 
-  if ((sum(covtest) == ncol(X)) && (length(qbs_id) == 0))
-    stop(
-      "Do not use 'covtest' for this hypothesis.
-          \nLikelihood ratio test of the full versus null model
-          \nis always provided."
-    )
+  # if ((sum(covtest) == ncol(X)) && (length(qbs_id) == 0))
+  #   stop(
+  #     "Do not use 'covtest' for this hypothesis.
+  #         \nLikelihood ratio test of the full versus null model
+  #         \his always provided."
+  #   )
 
   if (length(covtest) != ncol(X))
     stop(
@@ -458,21 +477,21 @@ without_breakpoint_without_cut <- function(formula = formula,
           \nnon-proportional hazards situation."
       )
 
-    for (i in 1:length(z_X_vect))
-      if ((z_X_vect[i] == FALSE) && (covtest[i] == TRUE) == TRUE)
-        stop("You mustn't test a PH effect (covtest=TRUE) for
-               \na PH covariate (z_X_vect=FALSE)!")
+    # for (i in 1:length(z_X_vect))
+    #   if ((z_X_vect[i] == FALSE) && (covtest[i] == TRUE) == TRUE)
+    #     stop("You mustn't test a PH effect (covtest=TRUE) for
+    #            \na PH covariate (z_X_vect=FALSE)!")
   } else{
     z_X_vect <- covtest <- rep(FALSE, ncol(X))
     if ((length(z_X_vect) != ncol(X)) ||
         (!is.logical(z_X_vect)) || (sum(is.na(z_X_vect)) > 0))
-      # stop(
-      #   "Invalid values for 'bsplines':
-      #     \nmust be a vector of logical values with the same number of elements
-      #     \nas for covariable used in the formula."
-      # )
-      stop("You mustn't test a PH effect (covtest=TRUE) for
-               \na PH covariate (z_X_vect=FALSE)!")
+      stop(
+        "Invalid values for 'bsplines':
+          \nmust be a vector of logical values with the same number of elements
+          \nas for covariable used in the formula."
+      )
+      # stop("You mustn't test a PH effect (covtest=TRUE) for
+      #          \na PH covariate (z_X_vect=FALSE)!")
 
     if (ncol(Y) > 2)
       stop(
@@ -480,10 +499,10 @@ without_breakpoint_without_cut <- function(formula = formula,
           \nnon-proportional hazards situation."
       )
 
-    for (i in 1:length(z_X_vect))
-      if ((z_X_vect[i] == FALSE) && (covtest[i] == TRUE) == TRUE)
-        stop("You mustn't test a PH effect (covtest=TRUE) for
-               \na PH covariate (z_X_vect=FALSE)!")
+    # for (i in 1:length(z_X_vect))
+    #   if ((z_X_vect[i] == FALSE) && (covtest[i] == TRUE) == TRUE)
+    #     stop("You mustn't test a PH effect (covtest=TRUE) for
+    #            \na PH covariate (z_X_vect=FALSE)!")
 
   }
 
@@ -513,7 +532,8 @@ without_breakpoint_without_cut <- function(formula = formula,
         ageDC,
         optim,
         trace,
-        speedy
+        speedy,
+        method
       )
     } else if (add.rmap.cut$breakpoint == TRUE &
                !is.na(add.rmap.cut$cut[1]) &
@@ -539,7 +559,8 @@ without_breakpoint_without_cut <- function(formula = formula,
         ageDC,
         optim,
         trace,
-        speedy
+        speedy,
+        method
       )
     } else if (add.rmap.cut$breakpoint == TRUE &
                is.na(add.rmap.cut$cut[1]) &
@@ -836,8 +857,8 @@ without_breakpoint_without_cut <- function(formula = formula,
       optim,
       trace,
       speedy,
-      nghq
-    )
+      nghq,
+      pophaz, method)
     oldClass(fit) <- "bsplines"
     fit$z_bsplines <- z_X_vect
   }
@@ -871,6 +892,7 @@ without_breakpoint_without_cut <- function(formula = formula,
   fit$varcov <- fit$var
   fit[["var"]] <- NULL
   fit$pophaz <- pophaz
+  fit$method <- method
   fit$baseline <- baseline
   fit$add.rmap <- add.rmap
   fit$ehazard <- ehazard

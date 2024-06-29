@@ -31,7 +31,6 @@ data("simuData", package = "xhaz")    # load the data sets 'simuData'
 #                      linear and proportional effects for the covariates on
 #                      baseline excess hazard.
 
-levels(simuData$sex) <- c("male", "female")
 
 set.seed(1980)
 simuData2 <- simuData[sample(nrow(simuData), size = 500), ]

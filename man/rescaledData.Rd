@@ -28,7 +28,7 @@ data(rescaledData)
 summary(rescaledData)
 }
 \references{
-Goungounga JA, Touraine C, Grafféo N, Giorgi R;
+Goungounga JA, Touraine C, Graff\'eo N, Giorgi R;
 CENSUR working survival group. Correcting for misclassification
 and selection effects in estimating net survival in clinical trials.
 BMC Med Res Methodol. 2019 May 16;19(1):104.

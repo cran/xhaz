@@ -31,7 +31,6 @@
 #' #                      linear and proportional effects for the covariates on
 #' #                      baseline excess hazard.
 #'
-#' levels(simuData$sex) <- c("male", "female")
 #' set.seed(1980)
 #' simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
 #'
@@ -104,11 +103,13 @@ print.constant <-
       nalpha <- 0
     }
 
+
+
+
     nstrata <- ifelse(is.null(attr(x$terms, "nstrata")),
                       1,
                       attr(x$terms, "nstrata"))
-    nvar <-
-      length(x$coef) - nstrata * (length(x$interval) - 1) - nalpha
+    nvar <- length(x$coef) - nstrata * (length(x$interval) - 1) - nalpha
     coef <- x$coef
     x$var <- x$varcov
     se <- numeric(length(coef))
@@ -123,26 +124,26 @@ print.constant <-
 
     if (ci_type == "delta.method") {
       if (!is.null(x$add.rmap)) {
-        se[(nvar + 1):(length(x$coef) - length(indxAlpha))] <- c(sqrt(exp(x$coef[(nvar + 1):(length(x$coef) - length(indxAlpha))]) %*%
-                                                                        x$var[(nvar + 1):(length(x$coef) - length(indxAlpha)),
-                                                                              (nvar + 1):(length(x$coef) - length(indxAlpha))] %*%
-                                                                        exp(x$coef[(nvar + 1):(length(x$coef) - length(indxAlpha))])))
+        se[(nvar + 1):(length(x$coef) - length(indxAlpha))] <- c(
+          sqrt(exp(x$coef[(nvar + 1):(length(x$coef) - length(indxAlpha))]) %*%
+                 x$var[(nvar + 1):(length(x$coef) - length(indxAlpha)),
+                       (nvar + 1):(length(x$coef) - length(indxAlpha))] %*%
+                 exp(x$coef[(nvar + 1):(length(x$coef) - length(indxAlpha))])))
 
-        coef[(nvar + 1):(length(x$coef) - length(indxAlpha))] <-
-          exp(coef[(nvar + 1):(length(x$coef) - length(indxAlpha))])
+        coef[(nvar + 1):(length(x$coef) - length(indxAlpha))] <- exp(
+          coef[(nvar + 1):(length(x$coef) - length(indxAlpha))])
         if (length(indxAlpha) > 1) {
           se[c(indxAlpha)] <- sqrt(diag(x$var[c(indxAlpha), c(indxAlpha)]))
-
         } else{
           se[c(indxAlpha)] <- (sqrt(x$var[c(indxAlpha), c(indxAlpha)]))
         }
       } else{
-        se[(nvar + 1):length(x$coef)] <- sqrt(exp(x$coef[(nvar + 1):length(x$coef)]) %*%
-                                                x$var[(nvar + 1):length(x$coef),
-                                                      (nvar + 1):length(x$coef)] %*%
-                                                exp(x$coef[(nvar + 1):length(x$coef)]))
-        coef[(nvar + 1):length(x$coef)] <-
-          exp(coef[(nvar + 1):length(x$coef)])
+        se[(nvar + 1):length(x$coef)] <- sqrt(
+          exp(x$coef[(nvar + 1):length(x$coef)]) %*%
+            x$var[(nvar + 1):length(x$coef),
+                  (nvar + 1):length(x$coef)] %*%
+            exp(x$coef[(nvar + 1):length(x$coef)]))
+        coef[(nvar + 1):length(x$coef)] <- exp(coef[(nvar + 1):length(x$coef)])
       }
 
     } else if (ci_type == "lognormal") {
@@ -237,14 +238,16 @@ print.constant <-
           coef_alpha <- exp(coef[indxAlpha])
 
           mlevel <- abs(qnorm((1 - x$level) / 2))
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            tmp_new <- cbind((exp(coef[index])),
+                             c(exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
+                             )) * se[1:nvar]),
+                             c(coef_alpha - mlevel * c(se_alpha))),
+                             c(exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
+                             )) * se[1:nvar]),
+                             coef_alpha + mlevel * c(se_alpha)))
+          }
 
-          tmp_new <- cbind((exp(coef[index])),
-                           c(exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
-                           )) * se[1:nvar]),
-                           c(coef_alpha - mlevel * c(se_alpha))),
-                           c(exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
-                           )) * se[1:nvar]),
-                           coef_alpha + mlevel * c(se_alpha)))
         } else {
           #lognormal based
           if (length(indxAlpha) > 1) {
@@ -258,37 +261,46 @@ print.constant <-
           coef_alpha <- exp(coef[indxAlpha])
 
           mlevel <- abs(qnorm((1 - x$level) / 2))
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            tmp_new <- cbind(c(exp(coef[1:nvar]), coef_alpha),
+                             c(exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
+                             )) *
+                               se[1:nvar]),
+                             exp(c(
+                               coef[indxAlpha] - mlevel * c(se_alpha)
+                             ))),
+                             c(exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
+                             )) *
+                               se[1:nvar]),
+                             exp(coef[indxAlpha] + mlevel * c(se_alpha))))
+            }
 
-          tmp_new <- cbind(c(exp(coef[1:nvar]), coef_alpha),
-                           c(exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
-                           )) *
-                             se[1:nvar]),
-                           exp(c(
-                             coef[indxAlpha] - mlevel * c(se_alpha)
-                           ))),
-                           c(exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
-                           )) *
-                             se[1:nvar]),
-                           exp(coef[indxAlpha] + mlevel * c(se_alpha))))
         }
 
 
       } else{
-        index <- c(1:nvar)
+        if (inherits(attributes(x$terms)$factors, "matrix")) {
+          index <- c(1:nvar)
 
-        tmp_new <- cbind(exp(coef[1:nvar]),
-                         exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
-                         )) * se[1:nvar]),
-                         exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
-                         )) * se[1:nvar]))
+          tmp_new <- cbind(exp(coef[1:nvar]),
+                           exp(coef[1:nvar] - abs(qnorm((1 - x$level) / 2
+                           )) * se[1:nvar]),
+                           exp(coef[1:nvar] + abs(qnorm((1 - x$level) / 2
+                           )) * se[1:nvar]))
+
+        }
+
       }
+
+  if (inherits(attributes(x$terms)$factors, "matrix")) {
+
       dimnames(tmp_new) <- list(names(coef[index]),
                                 c(
                                   "exp(coef)",
                                   paste("lower", x$level, sep = " "),
                                   paste("upper", x$level, sep = " ")
                                 ))
-
+}
 
 
       cat("\n")
@@ -298,17 +310,21 @@ print.constant <-
           cat(
             "Excess hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
           )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
-          print(tmp_new[-c(lines_al), ], digits = digits + 1)
+
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            lines_al <- which(stringr::str_detect(rownames(tmp_new),
+                                                  pattern = "alpha"))
+            print(tmp_new[-c(lines_al), ], digits = digits + 1)
+          }
+
           cat("\n")
           cat("and rescaled parameter on population hazard \n")
-
-          tmp_new_alpha <- matrix(tmp_new[c(lines_al), ], nrow = 1)
-          dimnames(tmp_new_alpha)[[1]] <- "alpha"
-          dimnames(tmp_new_alpha)[[2]] <- dimnames(tmp_new)[[2]]
-          print(tmp_new_alpha, digits = digits + 1)
-
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            tmp_new_alpha <- matrix(tmp_new[c(lines_al), ], nrow = 1)
+            dimnames(tmp_new_alpha)[[1]] <- "alpha"
+            dimnames(tmp_new_alpha)[[2]] <- dimnames(tmp_new)[[2]]
+            print(tmp_new_alpha, digits = digits + 1)
+            }
 
         } else if (x$pophaz == "corrected" &
                    x$add.rmap.cut$breakpoint == FALSE) {
@@ -316,33 +332,38 @@ print.constant <-
           cat(
             "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
           )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
-          print(tmp_new[-c(lines_al), ], digits = digits + 1)
-          cat("\n")
-          cat("and corrected scale parameters on population hazard \n")
-          print(tmp_new[c(lines_al), ], digits = digits + 1)
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            lines_al <- which(stringr::str_detect(rownames(tmp_new),
+                                                  pattern = "alpha"))
+            print(tmp_new[-c(lines_al), ], digits = digits + 1)
+            cat("\n")
+            cat("and corrected scale parameters on population hazard \n")
+            print(tmp_new[c(lines_al), ], digits = digits + 1)
+          }
+
         } else if (x$pophaz == "corrected" &
                    x$add.rmap.cut$breakpoint == TRUE) {
-          cat("\n")
-          cat(
-            "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
-          )
-          lines_al <-
-            which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
-          print(tmp_new[-c(lines_al), ], digits = digits + 1)
-          cat("\n")
-          cat(
-            "and corrected scale parameters on population hazard \n (non proportional correction using breakpoint approach)\n"
-          )
-          cat("\n")
+          if (inherits(attributes(x$terms)$factors, "matrix")) {
+            cat("\n")
+            cat(
+              "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
+            )
+            lines_al <-
+              which(stringr::str_detect(rownames(tmp_new), pattern = "alpha"))
+            print(tmp_new[-c(lines_al), ], digits = digits + 1)
+            cat("\n")
+            cat(
+              "and corrected scale parameters on population hazard \n (non proportional correction using breakpoint approach)\n"
+            )
+            cat("\n")
 
-          print(tmp_new[c(lines_al), ], digits = digits + 1)
+            print(tmp_new[c(lines_al), ], digits = digits + 1)
+            }
+
 
           if (!is.na(x$add.rmap.cut$cut[1])) {
             n_break <- length(x$add.rmap.cut$cut)
             n_int <- 1 + n_break
-
           }
 
           cat("\n")
@@ -354,7 +375,9 @@ print.constant <-
         cat(
           "Excess hazard hazard ratio(s)\n(proportional effect variable(s) for exess hazard ratio(s))\n"
         )
-        print(tmp_new, digits = digits + 1)
+        if (inherits(attributes(x$terms)$factors, "matrix")) {
+          print(tmp_new, digits = digits + 1)
+        }
       }
 
 
@@ -426,8 +449,12 @@ print.constant <-
 
 
     }
-    if (any(tmp_new[, "lower 0.95"] < 0)) {
-      warning("\nlower 0.95 CI approximation may be incorrect")
-    }
+    if (inherits(attributes(x$terms)$factors, "matrix")) {
+      if (any(tmp_new[, "lower 0.95"] < 0, na.rm = TRUE)) {
+        warning("\nlower 0.95 CI approximation may be incorrect")
+      }
+      }
+
+
     invisible()
   }

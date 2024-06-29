@@ -1,7 +1,7 @@
 #' @title Bayesian Information Criterion for excess hazard model with
 #' baseline hazard following a B-splines functions
 #'
-#' @description Calculates the Bayesian Information Criterion’ for fitted
+#' @description Calculates the Bayesian Information Criterion' for fitted
 #' models from `xhaz`.
 #'
 #' @param object a fitted model object obtained from `xhaz` function
@@ -21,7 +21,6 @@
 #' #                    function with two interior knots and allow here a
 #' #                    linear and proportional effects for the covariates on
 #' #                    baseline excess hazard.
-#' levels(simuData$sex) <- c("male", "female")
 #'
 #' fitphBS <- xhaz(formula = Surv(time_year, status) ~ agec + race,
 #'                 data = simuData,
@@ -33,6 +32,8 @@
 #' fitphBS
 #' BIC(fitphBS)
 #' }
+#'
+#' @keywords internal
 #' @export
 BIC.bsplines <- function(object, ...) {
 
@@ -40,7 +41,7 @@ BIC.bsplines <- function(object, ...) {
   if (length(dots.object) == 0) {
     if (inherits(object, "bsplines")) {
       df <- length(object$coefficients)
-      val <- (log(length(object$n)) * length(object$coefficients) - 2 * (object$loglik))[2]
+      val <- (log((object$n)) * length(object$coefficients) - 2 * (object$loglik))[2]
     } else{
       stop("object must be a xhaz function output")
     }
@@ -52,7 +53,7 @@ BIC.bsplines <- function(object, ...) {
         df <- length(object[[i]]$coefficients)
 
         val <-
-          (log(length(object[[i]]$n)) * length(object[[i]]$coefficients) - 2 * (object[[i]]$loglik))[2]
+          (log((object[[i]]$n)) * length(object[[i]]$coefficients) - 2 * (object[[i]]$loglik))[2]
         resval <- data.frame(df = df, AIC = val)
         return(resval)
       } else{

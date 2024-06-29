@@ -2,7 +2,7 @@
 % Please edit documentation in R/AIC.constant.R
 \name{AIC.constant}
 \alias{AIC.constant}
-\title{Akaike's An Information Criterion for excess hazard model with
+\title{Akaike's Information Criterion for excess hazard model with
 baseline hazard following a piecewise constant function}
 \usage{
 \method{AIC}{constant}(object, ..., k = 2)
@@ -22,7 +22,7 @@ If multiple objects are provided, a data.frame with columns corresponding to the
 objects and rows representing the number of parameters in the model (df) and the AIC
 }
 \description{
-Calculates the Akaike's ‘An Information Criterion’ for fitted
+Calculates the Akaike's 'An Information Criterion' for fitted
 models from \code{xhaz}.
 }
 \examples{
@@ -32,7 +32,6 @@ library("xhaz")
 #                      linear and proportional effects for the covariates on
 #                      baseline excess hazard.
 
-levels(simuData$sex) <- c("male", "female")
 
 set.seed(1980)
 simuData2 <- simuData[sample(nrow(simuData), size = 500), ]
@@ -51,3 +50,4 @@ AIC(fit.estv2)
 
 
 }
+\keyword{internal}

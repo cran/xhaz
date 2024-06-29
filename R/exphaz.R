@@ -2,9 +2,9 @@
 #'
 #' @description Calculate the expected hazard and survival.
 #'
-#' @param formula a formula object of the \code{\link{Surv}} function with the
+#' @param formula a formula object of the \code{Surv} function with the
 #' response on the left of a \code{~} operator and the terms on the right. The
-#' response must be a survival object as returned by the \code{\link{Surv}}
+#' response must be a survival object as returned by the \code{Surv}
 #' function (\code{time} in first and \code{status} in second).
 #' @note \code{Time} is OBLIGATORY in YEARS.
 #'
@@ -25,15 +25,18 @@
 #' @param subset an expression indicating which subset of the rows in data
 #' should be used in the fit. All observations are included by default
 #'
-#' @param na.action a missing-data filter function. The default is na.fail,
+#' @param na.action a missing data filter function. The default is na.fail,
 #' which returns an error if any missing values are found. An alternative is
 #' na.exclude, which deletes observations that contain one or more missing
 #' values.
 #'
 #'
-#' @param scale a numeric argument specifying if the ratetable contains death
-#' rates per day (default \code{scale = 365.2425}) or death rates per
-#' year (\code{scale = 1}).
+#' @param scale a numeric argument specifying by default \code{scale = 365.2425}
+#' (or using the value corresponding to \code{attributes(ratetable)$cutpoints[[1]][2]}, often equal
+#'  to 365.25) if the user wants to extract a yearly hazard rate, or \code{scale = 1} if he
+#'  wants to extract a daily hazard rate from a ratetable containing daily hazard rates for
+#'  a matched subject from the population, defined as \code{-log(1-q)/365.25}
+#'  where \code{q} is the \code{1-}year probability of death.
 #'
 #' @return An object of class \code{list} containing the following components:
 #'
@@ -44,28 +47,19 @@
 #'
 #' \item{dateDiag}{date of diagnosis}
 #'
-#' @references Goungounga JA, Touraine C, Grafféo N, Giorgi R;
+#' @references Goungounga JA, Touraine C, Graff\'eo N, Giorgi R;
 #' CENSUR working survival group. Correcting for misclassification
 #' and selection effects in estimating net survival in clinical trials.
 #' BMC Med Res Methodol. 2019 May 16;19(1):104.
 #' doi: 10.1186/s12874-019-0747-3. PMID: 31096911; PMCID: PMC6524224.
 #' (\href{https://pubmed.ncbi.nlm.nih.gov/31096911/}{PubMed})
 #'
-#' Touraine C, Grafféo N, Giorgi R; CENSUR working survival group.
-#' More accurate cancer-related excess mortality through correcting
-#' background mortality for extra variables.
-#' Stat Methods Med Res. 2020 Jan;29(1):122-136.
-#' doi: 10.1177/0962280218823234. Epub 2019 Jan 23. PMID: 30674229.
-#' (\href{https://pubmed.ncbi.nlm.nih.gov/30674229/}{PubMed})
-#'
-#' Mba RD, Goungounga JA, Grafféo N, Giorgi R; CENSUR working survival group.
-#' Correcting inaccurate background mortality in excess hazard models
-#' through breakpoints. BMC Med Res Methodol. 2020 Oct 29;20(1):268.
-#' doi: 10.1186/s12874-020-01139-z. PMID: 33121436; PMCID: PMC7596976.
-#' (\href{https://pubmed.ncbi.nlm.nih.gov/33121436/}{PubMed})
+#' Therneau, T. M., Grambsch, P. M., Therneau, T. M., & Grambsch, P. M. (2000).
+#' Expected survival. Modeling survival data: extending the Cox model, 261-287.
 #'
 #' @examples
 #'
+#' library(survival)
 #' library(survexp.fr)
 #' library(xhaz)
 #' fit.haz <- exphaz(
@@ -122,6 +116,7 @@ exphaz <- function(formula = formula(data),
       stop("Must have informations for date on the data set.")
   }
 
+
   if (!missing(ratetable)) {
     if (is.ratetable(ratetable)) {
       varlist <- attr(ratetable, "dimid")
@@ -139,11 +134,18 @@ exphaz <- function(formula = formula(data),
 
 
     varsexID <- try(which(varlist == 'sex'))
-    conditionVsex <-
-      attr(ratetable, which = "dimnames")[[varsexID]]
-    if (any(!conditionVsex %in% c('male', 'female'))) {
-      conditionVsex <- c('male', 'female')
+    conditionVsex <- attr(ratetable, which = "dimnames")[[varsexID]]
+    condsexdata <- unique(data[, rmap$sex])
+    if (any(conditionVsex %in% condsexdata)) {
+      conditionVsex <- condsexdata
+    } else{
+      stop(
+        "Please check the matching between the levels of sex \nin the data.frame and in the ratetable used."
+      )
     }
+
+
+
     if (!missing(rmap)) {
       rcall <- substitute(rmap)
       if (!is.call(rcall) || rcall[[1]] != as.name("list"))
